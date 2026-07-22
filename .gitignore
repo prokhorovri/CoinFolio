@@ -1,0 +1,27 @@
+# Build outputs (matches at any module depth, e.g. app/build/)
+build/
+.gradle/
+.kotlin/
+.cxx/
+.externalNativeBuild/
+captures/
+
+# Local machine config (SDK path — never commit)
+/local.properties
+
+# IDE
+.idea/
+*.iml
+
+# OS
+.DS_Store
+
+
+# Packaged artifacts
+*.apk
+*.aab
+
+# Signing (used once the deferred CD phase adds a keystore — never commit keys)
+*.jks
+*.keystore
+keystore.properties
