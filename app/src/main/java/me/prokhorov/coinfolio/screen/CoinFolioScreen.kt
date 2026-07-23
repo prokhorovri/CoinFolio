@@ -1,4 +1,4 @@
-package me.prokhorov.coinfolio.screens
+package me.prokhorov.coinfolio.screen
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize

@@ -36,7 +36,9 @@ android {
 
 dependencies {
     // Modules
+    @Suppress("AvoidDuplicateDependencies")
     implementation(projects.domain)
+    @Suppress("AvoidDuplicateDependencies")
     implementation(projects.data)
 
     // Compose

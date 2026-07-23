@@ -11,7 +11,13 @@ activityCompose = "1.13.0"
 # Hilt
 hilt = "2.60.1"
 
+# Coroutines
+coroutines = "1.11.0"
+
 [libraries]
+# Coroutines
+kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
+
 # Compose
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }

@@ -8,7 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import dagger.hilt.android.AndroidEntryPoint
-import me.prokhorov.coinfolio.screens.CoinFolioScreen
+import me.prokhorov.coinfolio.screen.CoinFolioScreen
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
