@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -19,4 +20,12 @@ android {
 
 dependencies {
     implementation(projects.domain)
+
+    // Network
+    implementation(libs.retrofit.core)
+    implementation(libs.retrofit.converter.kotlinx.serialization)
+    implementation(libs.kotlinx.serialization.json)
+
+    // DI (constructor injection only — Hilt modules live in :app)
+    implementation(libs.javax.inject)
 }
