@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">CoinFolio</string>
+
+    <string name="retry_text">Retry</string>
+
+    <string name="coin_list_screen_empty_text">No coins to show</string>
 </resources>
