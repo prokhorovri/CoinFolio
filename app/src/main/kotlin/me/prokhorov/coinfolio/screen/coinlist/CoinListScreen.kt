@@ -34,10 +34,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import me.prokhorov.coinfolio.R
 import me.prokhorov.coinfolio.domain.model.Coin
-import me.prokhorov.coinfolio.theme.NegativeChangeColor
-import me.prokhorov.coinfolio.theme.PositiveChangeColor
+import me.prokhorov.coinfolio.theme.CoinFolioTheme
 import me.prokhorov.coinfolio.theme.SpacingMedium
-import me.prokhorov.coinfolio.theme.StatusBarScrimExtraHeight
+import me.prokhorov.coinfolio.theme.TopFadeExtraHeight
+import me.prokhorov.coinfolio.theme.extendedColors
 import me.prokhorov.coinfolio.util.formatAsPercent
 import me.prokhorov.coinfolio.util.formatAsUsd
 import java.math.BigDecimal
@@ -139,7 +139,7 @@ private fun CoinList(coins: List<Coin>, contentPadding: PaddingValues) {
         contentPadding = PaddingValues(
             start = contentPadding.calculateStartPadding(layoutDirection),
             end = contentPadding.calculateEndPadding(layoutDirection),
-            top = contentPadding.calculateTopPadding() + StatusBarScrimExtraHeight,
+            top = contentPadding.calculateTopPadding() + TopFadeExtraHeight,
             bottom = contentPadding.calculateBottomPadding() + SpacingMedium,
         ),
     ) {
@@ -175,9 +175,9 @@ private fun CoinRow(coin: Coin) {
             Text(
                 text = coin.priceChangePercent24h.formatAsPercent(),
                 color = if (coin.priceChangePercent24h.signum() >= 0) {
-                    PositiveChangeColor
+                    MaterialTheme.extendedColors.positive
                 } else {
-                    NegativeChangeColor
+                    MaterialTheme.extendedColors.negative
                 },
                 style = MaterialTheme.typography.bodySmall,
             )
@@ -188,7 +188,7 @@ private fun CoinRow(coin: Coin) {
 @Preview(showBackground = true)
 @Composable
 private fun CoinListContentPreview() {
-    MaterialTheme {
+    CoinFolioTheme {
         CoinListContent(
             state = CoinListUiState(
                 coins = listOf(

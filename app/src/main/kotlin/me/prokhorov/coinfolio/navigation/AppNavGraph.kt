@@ -9,7 +9,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import me.prokhorov.coinfolio.screen.coinlist.CoinListScreen
-import me.prokhorov.coinfolio.ui.statusbar.StatusBarScrim
+import me.prokhorov.coinfolio.ui.overlay.TopFadeOverlay
 
 @Composable
 fun AppNavGraph(
@@ -24,6 +24,6 @@ fun AppNavGraph(
                 CoinListScreen()
             }
         }
-        StatusBarScrim()
+        TopFadeOverlay()
     }
 }
