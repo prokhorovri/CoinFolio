@@ -4,8 +4,8 @@ import me.prokhorov.coinfolio.data.mapper.toDomain
 import me.prokhorov.coinfolio.data.remote.CoinRemoteDataSource
 import me.prokhorov.coinfolio.data.remote.dto.CoinDto
 import me.prokhorov.coinfolio.domain.model.Coin
-import me.prokhorov.coinfolio.domain.model.Resource
 import me.prokhorov.coinfolio.domain.repository.CoinRepository
+import me.prokhorov.coinfolio.domain.result.Resource
 import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject

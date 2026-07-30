@@ -42,6 +42,9 @@ dependencies {
     @Suppress("AvoidDuplicateDependencies")
     implementation(projects.data)
 
+    // Coroutines
+    implementation(libs.kotlinx.coroutines.core)
+
     // Compose
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)

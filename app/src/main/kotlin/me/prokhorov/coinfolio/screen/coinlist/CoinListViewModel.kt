@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import me.prokhorov.coinfolio.domain.model.Resource
+import me.prokhorov.coinfolio.domain.result.Resource
 import me.prokhorov.coinfolio.domain.usecase.GetTopCoinsUseCase
 import javax.inject.Inject
 

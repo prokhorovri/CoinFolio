@@ -22,9 +22,11 @@ android {
 dependencies {
     implementation(projects.domain)
 
+    // Coroutines
+    implementation(libs.kotlinx.coroutines.core)
+
     // Network
     implementation(libs.retrofit.core)
-    implementation(libs.retrofit.converter.kotlinx.serialization)
     implementation(libs.kotlinx.serialization.json)
 
     // Room
