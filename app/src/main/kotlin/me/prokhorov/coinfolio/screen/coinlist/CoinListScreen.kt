@@ -1,5 +1,6 @@
 package me.prokhorov.coinfolio.screen.coinlist
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -28,14 +29,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import coil3.compose.AsyncImage
 import me.prokhorov.coinfolio.R
 import me.prokhorov.coinfolio.domain.model.Coin
 import me.prokhorov.coinfolio.theme.CoinFolioTheme
-import me.prokhorov.coinfolio.theme.SpacingMedium
+import me.prokhorov.coinfolio.theme.CoinIconSize
+import me.prokhorov.coinfolio.theme.Spacing12
+import me.prokhorov.coinfolio.theme.Spacing16
 import me.prokhorov.coinfolio.theme.TopFadeExtraHeight
 import me.prokhorov.coinfolio.theme.extendedColors
 import me.prokhorov.coinfolio.util.formatAsPercent
@@ -44,15 +49,19 @@ import java.math.BigDecimal
 
 @Composable
 fun CoinListScreen(
+    onCoinClick: (String) -> Unit,
     viewModel: CoinListViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val lifecycleOwner = LocalLifecycleOwner.current
 
-    LaunchedEffect(Unit) {
-        viewModel.effect.collect { effect ->
-            when (effect) {
-                is CoinListEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)
+    LaunchedEffect(key1 = lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            viewModel.effect.collect { effect ->
+                when (effect) {
+                    is CoinListEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)
+                }
             }
         }
     }
@@ -61,6 +70,7 @@ fun CoinListScreen(
         state = state,
         snackbarHostState = snackbarHostState,
         onRetry = { viewModel.onIntent(CoinListIntent.LoadCoins) },
+        onCoinClick = onCoinClick,
     )
 }
 
@@ -69,6 +79,7 @@ private fun CoinListContent(
     state: CoinListUiState,
     snackbarHostState: SnackbarHostState,
     onRetry: () -> Unit,
+    onCoinClick: (String) -> Unit,
 ) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -83,8 +94,15 @@ private fun CoinListContent(
                     contentPadding = innerPadding,
                 )
             }
+
             state.coins.isEmpty() -> EmptyState(contentPadding = innerPadding)
-            else -> CoinList(coins = state.coins, contentPadding = innerPadding)
+            else -> {
+                CoinList(
+                    coins = state.coins,
+                    contentPadding = innerPadding,
+                    onCoinClick = onCoinClick,
+                )
+            }
         }
     }
 }
@@ -131,7 +149,11 @@ private fun EmptyState(contentPadding: PaddingValues) {
 }
 
 @Composable
-private fun CoinList(coins: List<Coin>, contentPadding: PaddingValues) {
+private fun CoinList(
+    coins: List<Coin>,
+    contentPadding: PaddingValues,
+    onCoinClick: (String) -> Unit,
+) {
     val layoutDirection = LocalLayoutDirection.current
 
     LazyColumn(
@@ -140,31 +162,32 @@ private fun CoinList(coins: List<Coin>, contentPadding: PaddingValues) {
             start = contentPadding.calculateStartPadding(layoutDirection),
             end = contentPadding.calculateEndPadding(layoutDirection),
             top = contentPadding.calculateTopPadding() + TopFadeExtraHeight,
-            bottom = contentPadding.calculateBottomPadding() + SpacingMedium,
+            bottom = contentPadding.calculateBottomPadding() + Spacing16,
         ),
     ) {
         items(coins, key = Coin::id) { coin ->
-            CoinRow(coin = coin)
+            CoinRow(coin = coin, onClick = { onCoinClick(coin.id) })
         }
     }
 }
 
 @Composable
-private fun CoinRow(coin: Coin) {
+private fun CoinRow(coin: Coin, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = SpacingMedium, vertical = 12.dp),
+            .clickable(onClick = onClick)
+            .padding(horizontal = Spacing16, vertical = Spacing12),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         AsyncImage(
             model = coin.imageUrl,
             contentDescription = coin.name,
-            modifier = Modifier.size(40.dp),
+            modifier = Modifier.size(CoinIconSize),
         )
         Column(
             modifier = Modifier
-                .padding(horizontal = 12.dp)
+                .padding(horizontal = Spacing12)
                 .weight(1f),
         ) {
             Text(text = coin.name, style = MaterialTheme.typography.bodyLarge)
@@ -212,6 +235,7 @@ private fun CoinListContentPreview() {
             ),
             snackbarHostState = remember { SnackbarHostState() },
             onRetry = {},
+            onCoinClick = {},
         )
     }
 }

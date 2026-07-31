@@ -8,6 +8,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import me.prokhorov.coinfolio.screen.coindetail.CoinDetailScreen
 import me.prokhorov.coinfolio.screen.coinlist.CoinListScreen
 import me.prokhorov.coinfolio.ui.overlay.TopFadeOverlay
 
@@ -18,10 +19,17 @@ fun AppNavGraph(
     Box(modifier = Modifier.fillMaxSize()) {
         NavHost(
             navController = navController,
-            startDestination = ScreenRoute.CoinList.route,
+            startDestination = ScreenRoute.CoinList,
         ) {
-            composable(route = ScreenRoute.CoinList.route) {
-                CoinListScreen()
+            composable<ScreenRoute.CoinList> {
+                CoinListScreen(
+                    onCoinClick = { coinId ->
+                        navController.navigate(ScreenRoute.CoinDetail(id = coinId))
+                    },
+                )
+            }
+            composable<ScreenRoute.CoinDetail> {
+                CoinDetailScreen(onBackClick = { navController.navigateUp() })
             }
         }
         TopFadeOverlay()

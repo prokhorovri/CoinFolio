@@ -1,7 +1,11 @@
 package me.prokhorov.coinfolio.navigation
 
-sealed class ScreenRoute(
-    val route: String,
-) {
-    data object CoinList : ScreenRoute(route = "coin_list")
+import kotlinx.serialization.Serializable
+
+sealed interface ScreenRoute {
+    @Serializable
+    data object CoinList : ScreenRoute
+
+    @Serializable
+    data class CoinDetail(val id: String) : ScreenRoute
 }
