@@ -11,15 +11,25 @@ import me.prokhorov.coinfolio.domain.repository.PortfolioRepository
 import javax.inject.Inject
 
 class PortfolioRepositoryImpl @Inject constructor(
-    private val localDataSource: HoldingLocalDataSource,
+    private val holdingLocalDataSource: HoldingLocalDataSource,
 ) : PortfolioRepository {
     override fun getHoldings(): Flow<List<Holding>> {
-        return localDataSource
+        return holdingLocalDataSource
             .getHoldings()
             .map { entities -> entities.map(HoldingEntity::toDomain) }
     }
 
-    override suspend fun addHolding(holding: Holding) {
-        localDataSource.upsertHolding(holding.toEntity())
+    override fun getHolding(coinId: String): Flow<Holding?> {
+        return holdingLocalDataSource
+            .getHolding(coinId)
+            .map { entity -> entity?.toDomain() }
+    }
+
+    override suspend fun saveHolding(holding: Holding) {
+        holdingLocalDataSource.upsertHolding(holding.toEntity())
+    }
+
+    override suspend fun deleteHolding(coinId: String) {
+        holdingLocalDataSource.deleteHolding(coinId)
     }
 }

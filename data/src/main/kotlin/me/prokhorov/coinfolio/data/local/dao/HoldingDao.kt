@@ -11,6 +11,12 @@ interface HoldingDao {
     @Query("SELECT * FROM holdings")
     fun getHoldings(): Flow<List<HoldingEntity>>
 
+    @Query("SELECT * FROM holdings WHERE coinId = :coinId")
+    fun getHolding(coinId: String): Flow<HoldingEntity?>
+
+    @Query("DELETE FROM holdings WHERE coinId = :coinId")
+    suspend fun deleteHolding(coinId: String)
+
     // Replaces any existing holding for the same coin; quantity is an absolute amount, not a delta.
     @Upsert
     suspend fun upsertHolding(holding: HoldingEntity)

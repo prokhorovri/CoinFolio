@@ -10,5 +10,9 @@ class HoldingLocalDataSource @Inject constructor(
 ) {
     fun getHoldings(): Flow<List<HoldingEntity>> = dao.getHoldings()
 
+    fun getHolding(coinId: String): Flow<HoldingEntity?> = dao.getHolding(coinId)
+
     suspend fun upsertHolding(holding: HoldingEntity) = dao.upsertHolding(holding)
+
+    suspend fun deleteHolding(coinId: String) = dao.deleteHolding(coinId)
 }
