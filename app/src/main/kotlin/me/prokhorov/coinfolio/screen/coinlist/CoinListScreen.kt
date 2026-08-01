@@ -45,6 +45,7 @@ import me.prokhorov.coinfolio.theme.TopFadeExtraHeight
 import me.prokhorov.coinfolio.theme.extendedColors
 import me.prokhorov.coinfolio.util.formatAsPercent
 import me.prokhorov.coinfolio.util.formatAsUsd
+import me.prokhorov.coinfolio.util.isGain
 import java.math.BigDecimal
 
 @Composable
@@ -197,7 +198,7 @@ private fun CoinRow(coin: Coin, onClick: () -> Unit) {
             Text(text = coin.currentPrice.formatAsUsd(), style = MaterialTheme.typography.bodyLarge)
             Text(
                 text = coin.priceChangePercent24h.formatAsPercent(),
-                color = if (coin.priceChangePercent24h.signum() >= 0) {
+                color = if (coin.priceChangePercent24h.isGain()) {
                     MaterialTheme.extendedColors.positive
                 } else {
                     MaterialTheme.extendedColors.negative

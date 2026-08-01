@@ -5,4 +5,19 @@
     <string name="back_text">Back</string>
 
     <string name="coin_list_screen_empty_text">No coins to show</string>
+
+    <string name="coin_detail_screen_rank_text">Rank #%1$d</string>
+    <string name="coin_detail_screen_market_data_title_text">Market data</string>
+    <string name="coin_detail_screen_high_24h_label_text">24h high</string>
+    <string name="coin_detail_screen_low_24h_label_text">24h low</string>
+    <string name="coin_detail_screen_market_cap_label_text">Market cap</string>
+    <string name="coin_detail_screen_volume_label_text">Volume (24h)</string>
+    <string name="coin_detail_screen_ath_label_text">All-time high</string>
+    <string name="coin_detail_screen_supply_label_text">Circulating supply</string>
+
+    <string name="coin_detail_screen_holding_title_text">Your holding</string>
+    <string name="coin_detail_screen_quantity_label_text">Quantity</string>
+    <string name="coin_detail_screen_not_held_text">Not in your portfolio yet</string>
+    <string name="coin_detail_screen_save_text">Save</string>
+    <string name="coin_detail_screen_saved_text">Holding saved</string>
 </resources>
