@@ -22,6 +22,12 @@ import me.prokhorov.coinfolio.navigation.ScreenRoute
 import me.prokhorov.coinfolio.util.formatAsQuantity
 import javax.inject.Inject
 
+/**
+ * Bounds the magnitude a paste can reach: an exponent like `1E+999999999` parses fine but
+ * expands to a gigabyte-long plain string when formatted or written to Room.
+ */
+private val QUANTITY_PATTERN = Regex("""\d{0,15}(\.\d{0,18})?""")
+
 @HiltViewModel
 class CoinDetailViewModel @Inject constructor(
     private val getCoinDetailUseCase: GetCoinDetailUseCase,
@@ -59,12 +65,10 @@ class CoinDetailViewModel @Inject constructor(
                     it.copy(isLoading = false, coin = result.data)
                 }
 
-                is Resource.Error -> {
+                is Resource.Failure -> {
                     _state.update { it.copy(isLoading = false, errorMessage = result.message) }
                     _effect.emit(CoinDetailEffect.ShowError(result.message))
                 }
-
-                Resource.Loading -> Unit
             }
         }
     }
@@ -99,13 +103,5 @@ class CoinDetailViewModel @Inject constructor(
             _state.update { it.copy(editedQuantity = quantity.formatAsQuantity()) }
             _effect.emit(CoinDetailEffect.HoldingSaved)
         }
-    }
-
-    private companion object {
-        /**
-         * Bounds the magnitude a paste can reach: an exponent like `1E+999999999` parses fine but
-         * expands to a gigabyte-long plain string when formatted or written to Room.
-         */
-        val QUANTITY_PATTERN = Regex("""\d{0,15}(\.\d{0,18})?""")
     }
 }

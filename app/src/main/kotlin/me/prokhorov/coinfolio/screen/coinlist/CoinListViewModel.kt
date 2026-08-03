@@ -43,11 +43,11 @@ class CoinListViewModel @Inject constructor(
                 is Resource.Success -> _state.update {
                     it.copy(isLoading = false, coins = result.data)
                 }
-                is Resource.Error -> {
+
+                is Resource.Failure -> {
                     _state.update { it.copy(isLoading = false, errorMessage = result.message) }
                     _effect.emit(CoinListEffect.ShowError(result.message))
                 }
-                Resource.Loading -> Unit
             }
         }
     }

@@ -19,9 +19,9 @@ class CoinRepositoryImpl @Inject constructor(
         return try {
             Resource.Success(remoteDataSource.getTopCoins().map(CoinDto::toDomain))
         } catch (e: IOException) {
-            Resource.Error(e.message ?: NETWORK_ERROR)
+            Resource.Failure(e.message ?: NETWORK_ERROR)
         } catch (e: HttpException) {
-            e.toError()
+            e.toFailure()
         }
     }
 
@@ -29,11 +29,11 @@ class CoinRepositoryImpl @Inject constructor(
         return try {
             Resource.Success(remoteDataSource.getCoinDetail(coinId).toDomain())
         } catch (e: IOException) {
-            Resource.Error(e.message ?: NETWORK_ERROR)
+            Resource.Failure(e.message ?: NETWORK_ERROR)
         } catch (e: HttpException) {
             when (e.code()) {
-                HttpURLConnection.HTTP_NOT_FOUND -> Resource.Error(COIN_NOT_FOUND_ERROR)
-                else -> e.toError()
+                HttpURLConnection.HTTP_NOT_FOUND -> Resource.Failure(COIN_NOT_FOUND_ERROR)
+                else -> e.toFailure()
             }
         }
     }
@@ -42,10 +42,10 @@ class CoinRepositoryImpl @Inject constructor(
      * A 429 gets its own message on purpose: the free tier counts failed calls toward the limit,
      * so a user who reads "server error" and retries immediately only makes it worse.
      */
-    private fun HttpException.toError(): Resource.Error {
+    private fun HttpException.toFailure(): Resource.Failure {
         return when (code()) {
-            HTTP_TOO_MANY_REQUESTS -> Resource.Error(RATE_LIMIT_ERROR)
-            else -> Resource.Error(message ?: SERVER_ERROR)
+            HTTP_TOO_MANY_REQUESTS -> Resource.Failure(RATE_LIMIT_ERROR)
+            else -> Resource.Failure(message ?: SERVER_ERROR)
         }
     }
 
