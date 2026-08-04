@@ -1,12 +1,28 @@
 <resources>
+
     <string name="app_name">CoinFolio</string>
 
+    <!--region Common-->
     <string name="retry_text">Retry</string>
     <string name="back_text">Back</string>
+    <!--endregion-->
 
+    <!--region Errors-->
+    <string name="network_error_text">Network error</string>
+    <string name="server_error_text">Server error (%1$d)</string>
+    <string name="coin_not_found_error_text">Coin not found</string>
+    <string name="rate_limit_error_text">Too many requests, try again in a minute</string>
+    <string name="unexpected_error_text">Something went wrong</string>
+    <!--endregion-->
+
+    <!--region Coin list screen-->
     <string name="coin_list_screen_empty_text">No coins to show</string>
+    <!--endregion-->
 
+    <!--region Coin detail screen-->
     <string name="coin_detail_screen_rank_text">Rank #%1$d</string>
+
+    <!-- Coin detail screen: market data-->
     <string name="coin_detail_screen_market_data_title_text">Market data</string>
     <string name="coin_detail_screen_high_24h_label_text">24h high</string>
     <string name="coin_detail_screen_low_24h_label_text">24h low</string>
@@ -15,9 +31,12 @@
     <string name="coin_detail_screen_ath_label_text">All-time high</string>
     <string name="coin_detail_screen_supply_label_text">Circulating supply</string>
 
+    <!-- Coin detail screen: holding -->
     <string name="coin_detail_screen_holding_title_text">Your holding</string>
     <string name="coin_detail_screen_quantity_label_text">Quantity</string>
     <string name="coin_detail_screen_not_held_text">Not in your portfolio yet</string>
     <string name="coin_detail_screen_save_text">Save</string>
     <string name="coin_detail_screen_saved_text">Holding saved</string>
+    <!--endregion-->
+
 </resources>
