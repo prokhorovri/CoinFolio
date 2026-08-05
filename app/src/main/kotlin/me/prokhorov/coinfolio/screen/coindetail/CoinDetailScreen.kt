@@ -29,8 +29,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -50,6 +52,7 @@ import me.prokhorov.coinfolio.theme.Spacing24
 import me.prokhorov.coinfolio.theme.Spacing4
 import me.prokhorov.coinfolio.theme.Spacing8
 import me.prokhorov.coinfolio.theme.extendedColors
+import me.prokhorov.coinfolio.util.asMessage
 import me.prokhorov.coinfolio.util.formatAsCompact
 import me.prokhorov.coinfolio.util.formatAsCompactUsd
 import me.prokhorov.coinfolio.util.formatAsPercent
@@ -66,13 +69,19 @@ fun CoinDetailScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val lifecycleOwner = LocalLifecycleOwner.current
-    val savedMessage = stringResource(R.string.coin_detail_screen_saved_text)
+    val context = LocalContext.current
+    val savedMessage by rememberUpdatedState(
+        stringResource(R.string.coin_detail_screen_saved_text)
+    )
 
     LaunchedEffect(key1 = lifecycleOwner) {
         lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             viewModel.effect.collect { effect ->
                 when (effect) {
-                    is CoinDetailEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)
+                    is CoinDetailEffect.ShowError -> {
+                        snackbarHostState.showSnackbar(effect.error.asMessage(context))
+                    }
+
                     is CoinDetailEffect.HoldingSaved -> snackbarHostState.showSnackbar(savedMessage)
                 }
             }
@@ -116,16 +125,17 @@ private fun CoinDetailContent(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
+        @Suppress("IntroduceWhenSubject")
         when {
-            state.isLoading && state.coin == null -> LoadingState(contentPadding = innerPadding)
-            state.coin == null -> {
+            state.coin == null && state.error != null -> {
                 ErrorState(
-                    message = state.errorMessage.orEmpty(),
+                    message = state.error.asMessage(),
                     onRetry = onRetry,
                     contentPadding = innerPadding,
                 )
             }
 
+            state.coin == null -> LoadingState(contentPadding = innerPadding)
             else -> {
                 CoinDetailBody(
                     coin = state.coin,

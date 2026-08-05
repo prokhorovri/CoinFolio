@@ -26,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -43,6 +44,7 @@ import me.prokhorov.coinfolio.theme.Spacing12
 import me.prokhorov.coinfolio.theme.Spacing16
 import me.prokhorov.coinfolio.theme.TopFadeExtraHeight
 import me.prokhorov.coinfolio.theme.extendedColors
+import me.prokhorov.coinfolio.util.asMessage
 import me.prokhorov.coinfolio.util.formatAsPercent
 import me.prokhorov.coinfolio.util.formatAsUsd
 import me.prokhorov.coinfolio.util.isGain
@@ -56,12 +58,15 @@ fun CoinListScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val lifecycleOwner = LocalLifecycleOwner.current
+    val context = LocalContext.current
 
     LaunchedEffect(key1 = lifecycleOwner) {
         lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             viewModel.effect.collect { effect ->
                 when (effect) {
-                    is CoinListEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)
+                    is CoinListEffect.ShowError -> {
+                        snackbarHostState.showSnackbar(effect.error.asMessage(context))
+                    }
                 }
             }
         }
@@ -88,9 +93,9 @@ private fun CoinListContent(
     ) { innerPadding ->
         when {
             state.isLoading && state.coins.isEmpty() -> LoadingState(contentPadding = innerPadding)
-            state.coins.isEmpty() && state.errorMessage != null -> {
+            state.coins.isEmpty() && state.error != null -> {
                 ErrorState(
-                    message = state.errorMessage,
+                    message = state.error.asMessage(),
                     onRetry = onRetry,
                     contentPadding = innerPadding,
                 )

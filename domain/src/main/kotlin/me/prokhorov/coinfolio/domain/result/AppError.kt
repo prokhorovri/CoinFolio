@@ -7,7 +7,7 @@ sealed interface AppError {
     /** Rate limited. Failed calls count toward the limit too, so retrying now makes it worse. */
     data object RateLimited : AppError
 
-    /** 404 — no such coin id, so retrying won't help. */
+    /** 404: no such coin id, so retrying won't help. */
     data object NotFound : AppError
 
     data class Server(val code: Int) : AppError

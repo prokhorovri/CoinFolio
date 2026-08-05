@@ -34,6 +34,6 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
 
-    // DI (constructor injection only — Hilt modules live in :app)
+    // DI (constructor injection only; Hilt modules live in :app)
     implementation(libs.javax.inject)
 }

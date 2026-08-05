@@ -6,7 +6,7 @@ import javax.inject.Inject
 
 /**
  * Stores the absolute quantity held of a coin, replacing any previous value.
- * A quantity of zero removes the holding — an empty position is not a position.
+ * A quantity of zero removes the holding: an empty position is not a position.
  */
 class SaveHoldingUseCase @Inject constructor(
     private val repository: PortfolioRepository,

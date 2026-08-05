@@ -17,7 +17,7 @@ interface CoinApi {
     ): List<CoinDto>
 
     /**
-     * The bare endpoint also returns every exchange ticker plus community and developer stats —
+     * The bare endpoint also returns every exchange ticker plus community and developer stats,
      * hundreds of KB per call. The flags below trim it to the market data the detail screen shows.
      */
     @GET("coins/{id}")

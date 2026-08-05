@@ -23,8 +23,8 @@ import me.prokhorov.coinfolio.util.formatAsQuantity
 import javax.inject.Inject
 
 /**
- * Bounds the magnitude a paste can reach: an exponent like `1E+999999999` parses fine but
- * expands to a gigabyte-long plain string when formatted or written to Room.
+ * Caps how large a pasted number can get. `1E+999999999` parses fine, but expands to a
+ * gigabyte-long string once it is formatted or written to Room.
  */
 private val QUANTITY_PATTERN = Regex("""\d{0,15}(\.\d{0,18})?""")
 
@@ -38,7 +38,7 @@ class CoinDetailViewModel @Inject constructor(
 
     private val coinId = savedStateHandle.toRoute<ScreenRoute.CoinDetail>().id
 
-    private val _state = MutableStateFlow(CoinDetailUiState(coinId = coinId))
+    private val _state = MutableStateFlow(CoinDetailUiState(coinId = coinId, isLoading = true))
     val state: StateFlow<CoinDetailUiState> = _state.asStateFlow()
 
     private val _effect = MutableSharedFlow<CoinDetailEffect>()
@@ -59,15 +59,15 @@ class CoinDetailViewModel @Inject constructor(
 
     private fun loadCoin() {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, errorMessage = null) }
+            _state.update { it.copy(isLoading = true, error = null) }
             when (val result = getCoinDetailUseCase(coinId)) {
                 is Resource.Success -> _state.update {
                     it.copy(isLoading = false, coin = result.data)
                 }
 
                 is Resource.Failure -> {
-                    _state.update { it.copy(isLoading = false, errorMessage = result.message) }
-                    _effect.emit(CoinDetailEffect.ShowError(result.message))
+                    _state.update { it.copy(isLoading = false, error = result.error) }
+                    _effect.emit(CoinDetailEffect.ShowError(result.error))
                 }
             }
         }
@@ -82,9 +82,9 @@ class CoinDetailViewModel @Inject constructor(
     }
 
     /**
-     * Rejected input is dropped rather than shown, so the field can never hold something
-     * [CoinDetailUiState.parsedQuantity] would refuse. Commas are normalized because a decimal
-     * keyboard renders the locale separator, and `0,5` would otherwise silently disable saving.
+     * Drops rejected input instead of showing it, so the field can never hold something
+     * [CoinDetailUiState.parsedQuantity] would refuse. Commas become dots: a decimal keyboard
+     * shows the locale separator, and `0,5` would otherwise just disable saving with no hint why.
      */
     private fun updateQuantity(value: String) {
         val normalized = value.replace(',', '.')
@@ -93,8 +93,8 @@ class CoinDetailViewModel @Inject constructor(
     }
 
     /**
-     * The field is re-synced from the value that was just written, not from the stored holding
-     * echoing back — that echo lands after the write and would discard edits made in between.
+     * Re-syncs the field from the value just written, not from the stored holding echoing back.
+     * That echo arrives after the write and would discard anything typed in between.
      */
     private fun saveHolding() {
         val quantity = _state.value.parsedQuantity ?: return

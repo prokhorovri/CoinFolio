@@ -20,7 +20,7 @@ fun BigDecimal.formatAsUsd(): String {
     return sign() + "$" + amount.toPlainString()
 }
 
-/** Coin amounts keep their full precision — only the padding zeros go. */
+/** Coin amounts keep their full precision: only the padding zeros go. */
 fun BigDecimal.formatAsQuantity(): String {
     return stripTrailingZeros().toPlainString()
 }

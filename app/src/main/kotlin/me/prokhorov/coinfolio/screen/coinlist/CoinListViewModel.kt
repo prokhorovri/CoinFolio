@@ -38,15 +38,15 @@ class CoinListViewModel @Inject constructor(
 
     private fun loadCoins() {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, errorMessage = null) }
+            _state.update { it.copy(isLoading = true, error = null) }
             when (val result = getTopCoinsUseCase()) {
                 is Resource.Success -> _state.update {
                     it.copy(isLoading = false, coins = result.data)
                 }
 
                 is Resource.Failure -> {
-                    _state.update { it.copy(isLoading = false, errorMessage = result.message) }
-                    _effect.emit(CoinListEffect.ShowError(result.message))
+                    _state.update { it.copy(isLoading = false, error = result.error) }
+                    _effect.emit(CoinListEffect.ShowError(result.error))
                 }
             }
         }

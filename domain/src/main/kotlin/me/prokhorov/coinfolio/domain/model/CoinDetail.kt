@@ -5,7 +5,7 @@ import java.math.BigDecimal
 /**
  * The single-coin view, kept separate from [Coin] because the markets endpoint behind the list
  * cannot fill these fields. Merging the two would make every extra field nullable for list items.
- * Nullable here means the API genuinely omits it — young coins have no all-time high, and some
+ * Nullable here means the API genuinely omits it: young coins have no all-time high, and some
  * have no reported supply.
  */
 data class CoinDetail(
