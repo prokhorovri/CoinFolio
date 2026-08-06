@@ -12,6 +12,9 @@ sealed interface AppError {
 
     data class Server(val code: Int) : AppError
 
+    /** The local database could not be read or written: no free space, or a corrupt file. */
+    data object Storage : AppError
+
     /** Anything not recognised: an unreadable response, or a bug on our side. */
     data object Unexpected : AppError
 }

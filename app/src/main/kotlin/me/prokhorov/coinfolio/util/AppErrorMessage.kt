@@ -44,6 +44,7 @@ private val AppError.messageRes: Int
             AppError.RateLimited -> R.string.rate_limit_error_text
             AppError.NotFound -> R.string.coin_not_found_error_text
             is AppError.Server -> R.string.server_error_text
+            AppError.Storage -> R.string.storage_error_text
             AppError.Unexpected -> R.string.unexpected_error_text
         }
     }

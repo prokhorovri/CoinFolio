@@ -19,6 +19,12 @@ data class CoinDetailUiState(
      */
     val editedQuantity: String? = null,
     val savedQuantity: BigDecimal? = null,
+    /**
+     * Why the stored holding could not be read. Scoped to the holding section: the coin itself
+     * loaded fine, so this must not take over the screen the way [error] does. Terminal once set,
+     * because the query flow stops emitting after its first failure.
+     */
+    val holdingError: AppError? = null,
 ) {
     val quantityInput: String = editedQuantity ?: savedQuantity?.formatAsQuantity().orEmpty()
 

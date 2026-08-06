@@ -12,6 +12,7 @@
     <string name="server_error_text">Server error (%1$d)</string>
     <string name="coin_not_found_error_text">Coin not found</string>
     <string name="rate_limit_error_text">Too many requests, try again in a minute</string>
+    <string name="storage_error_text">Couldn\'t access saved data, check free space</string>
     <string name="unexpected_error_text">Something went wrong</string>
     <!--endregion-->
 

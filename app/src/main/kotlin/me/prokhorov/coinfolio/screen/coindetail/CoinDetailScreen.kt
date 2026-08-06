@@ -32,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -45,6 +46,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import coil3.compose.AsyncImage
 import me.prokhorov.coinfolio.R
 import me.prokhorov.coinfolio.domain.model.CoinDetail
+import me.prokhorov.coinfolio.domain.result.AppError
 import me.prokhorov.coinfolio.theme.CoinDetailIconSize
 import me.prokhorov.coinfolio.theme.CoinFolioTheme
 import me.prokhorov.coinfolio.theme.Spacing16
@@ -141,6 +143,7 @@ private fun CoinDetailContent(
                     coin = state.coin,
                     quantityInput = state.quantityInput,
                     savedQuantity = state.savedQuantity,
+                    holdingError = state.holdingError,
                     canSave = state.canSave,
                     contentPadding = innerPadding,
                     onQuantityChange = onQuantityChange,
@@ -185,6 +188,7 @@ private fun CoinDetailBody(
     coin: CoinDetail,
     quantityInput: String,
     savedQuantity: BigDecimal?,
+    holdingError: AppError?,
     canSave: Boolean,
     contentPadding: PaddingValues,
     onQuantityChange: (String) -> Unit,
@@ -206,6 +210,7 @@ private fun CoinDetailBody(
             symbol = coin.symbol,
             quantityInput = quantityInput,
             savedQuantity = savedQuantity,
+            holdingError = holdingError,
             canSave = canSave,
             onQuantityChange = onQuantityChange,
             onSaveClick = onSaveClick,
@@ -312,19 +317,25 @@ private fun HoldingSection(
     symbol: String,
     quantityInput: String,
     savedQuantity: BigDecimal?,
+    holdingError: AppError?,
     canSave: Boolean,
     onQuantityChange: (String) -> Unit,
     onSaveClick: () -> Unit,
 ) {
+    val errorMessage = holdingError?.asMessage()
     Column(verticalArrangement = Arrangement.spacedBy(Spacing8)) {
         Text(
             text = stringResource(R.string.coin_detail_screen_holding_title_text),
             style = MaterialTheme.typography.titleMedium,
         )
         Text(
-            text = when (savedQuantity) {
+            text = errorMessage ?: when (savedQuantity) {
                 null -> stringResource(R.string.coin_detail_screen_not_held_text)
                 else -> "${savedQuantity.formatAsQuantity()} ${symbol.uppercase()}"
+            },
+            color = when (errorMessage) {
+                null -> Color.Unspecified
+                else -> MaterialTheme.colorScheme.error
             },
             style = MaterialTheme.typography.bodyMedium,
         )

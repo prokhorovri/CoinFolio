@@ -2,6 +2,7 @@ package me.prokhorov.coinfolio.domain.usecase
 
 import me.prokhorov.coinfolio.domain.model.Holding
 import me.prokhorov.coinfolio.domain.repository.PortfolioRepository
+import me.prokhorov.coinfolio.domain.result.Resource
 import javax.inject.Inject
 
 /**
@@ -11,8 +12,8 @@ import javax.inject.Inject
 class SaveHoldingUseCase @Inject constructor(
     private val repository: PortfolioRepository,
 ) {
-    suspend operator fun invoke(holding: Holding) {
-        if (holding.quantity.signum() == 0) {
+    suspend operator fun invoke(holding: Holding): Resource<Unit> {
+        return if (holding.quantity.signum() == 0) {
             repository.deleteHolding(holding.coinId)
         } else {
             repository.saveHolding(holding)

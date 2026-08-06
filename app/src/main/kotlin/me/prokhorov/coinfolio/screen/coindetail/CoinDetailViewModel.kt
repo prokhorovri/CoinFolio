@@ -73,10 +73,24 @@ class CoinDetailViewModel @Inject constructor(
         }
     }
 
+    /**
+     * A read failure goes to state, not to an effect. An effect emitted from here is dropped:
+     * [_effect] has no buffer, and at init the screen has not subscribed yet. State also keeps the
+     * message on screen, which matches the failure being permanent, since the query flow stops
+     * emitting once it fails.
+     */
     private fun observeHolding() {
         viewModelScope.launch {
-            getHoldingUseCase(coinId).collect { holding ->
-                _state.update { it.copy(savedQuantity = holding?.quantity) }
+            getHoldingUseCase(coinId).collect { result ->
+                when (result) {
+                    is Resource.Success -> _state.update {
+                        it.copy(savedQuantity = result.data?.quantity)
+                    }
+
+                    is Resource.Failure -> _state.update {
+                        it.copy(holdingError = result.error)
+                    }
+                }
             }
         }
     }
@@ -99,9 +113,15 @@ class CoinDetailViewModel @Inject constructor(
     private fun saveHolding() {
         val quantity = _state.value.parsedQuantity ?: return
         viewModelScope.launch {
-            saveHoldingUseCase(Holding(coinId = coinId, quantity = quantity))
-            _state.update { it.copy(editedQuantity = quantity.formatAsQuantity()) }
-            _effect.emit(CoinDetailEffect.HoldingSaved)
+            val holding = Holding(coinId = coinId, quantity = quantity)
+            when (val result = saveHoldingUseCase(holding)) {
+                is Resource.Success -> {
+                    _state.update { it.copy(editedQuantity = quantity.formatAsQuantity()) }
+                    _effect.emit(CoinDetailEffect.HoldingSaved)
+                }
+
+                is Resource.Failure -> _effect.emit(CoinDetailEffect.ShowError(result.error))
+            }
         }
     }
 }
