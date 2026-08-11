@@ -74,17 +74,17 @@ class CoinDetailViewModel @Inject constructor(
     }
 
     /**
-     * A read failure goes to state, not to an effect. An effect emitted from here is dropped:
-     * [_effect] has no buffer, and at init the screen has not subscribed yet. State also keeps the
-     * message on screen, which matches the failure being permanent, since the query flow stops
-     * emitting once it fails.
+     * A failure is the last thing this flow emits, so the shown holding freezes. That goes to
+     * state, not to an effect: at init the screen has not subscribed, and an unbuffered effect
+     * would be dropped. Calling this again re-subscribes, since a finished flow cannot resume.
+     * Only do that while [CoinDetailUiState.holdingError] is set, or two collectors could run.
      */
     private fun observeHolding() {
         viewModelScope.launch {
             getHoldingUseCase(coinId).collect { result ->
                 when (result) {
                     is Resource.Success -> _state.update {
-                        it.copy(savedQuantity = result.data?.quantity)
+                        it.copy(savedQuantity = result.data?.quantity, holdingError = null)
                     }
 
                     is Resource.Failure -> _state.update {
@@ -96,9 +96,8 @@ class CoinDetailViewModel @Inject constructor(
     }
 
     /**
-     * Drops rejected input instead of showing it, so the field can never hold something
-     * [CoinDetailUiState.parsedQuantity] would refuse. Commas become dots: a decimal keyboard
-     * shows the locale separator, and `0,5` would otherwise just disable saving with no hint why.
+     * Drops rejected input, so the field cannot hold what [CoinDetailUiState.parsedQuantity]
+     * refuses. Commas become dots, or `0,5` from a decimal keyboard would silently block saving.
      */
     private fun updateQuantity(value: String) {
         val normalized = value.replace(',', '.')
@@ -107,8 +106,12 @@ class CoinDetailViewModel @Inject constructor(
     }
 
     /**
-     * Re-syncs the field from the value just written, not from the stored holding echoing back.
-     * That echo arrives after the write and would discard anything typed in between.
+     * Re-syncs the field from the value just written, because the database echo lands later and
+     * would wipe out anything typed in between.
+     *
+     * A write landing while [observeHolding] is dead means the database takes queries again, so a
+     * re-read is worth it: an unparseable stored quantity breaks every read while writes still
+     * work, and saving over it fixes the row. A full disk fails the write too, so this never runs.
      */
     private fun saveHolding() {
         val quantity = _state.value.parsedQuantity ?: return
@@ -117,6 +120,9 @@ class CoinDetailViewModel @Inject constructor(
             when (val result = saveHoldingUseCase(holding)) {
                 is Resource.Success -> {
                     _state.update { it.copy(editedQuantity = quantity.formatAsQuantity()) }
+                    if (_state.value.holdingError != null) {
+                        observeHolding()
+                    }
                     _effect.emit(CoinDetailEffect.HoldingSaved)
                 }
 
