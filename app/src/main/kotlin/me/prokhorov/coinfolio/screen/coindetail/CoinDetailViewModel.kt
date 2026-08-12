@@ -23,8 +23,8 @@ import me.prokhorov.coinfolio.util.formatAsQuantity
 import javax.inject.Inject
 
 /**
- * Caps how large a pasted number can get. `1E+999999999` parses fine, but expands to a
- * gigabyte-long string once it is formatted or written to Room.
+ * Limits how large a pasted number can be. `1E+999999999` is valid, but after formatting or
+ * saving to Room it becomes a string that is one gigabyte long.
  */
 private val QUANTITY_PATTERN = Regex("""\d{0,15}(\.\d{0,18})?""")
 
@@ -74,10 +74,11 @@ class CoinDetailViewModel @Inject constructor(
     }
 
     /**
-     * A failure is the last thing this flow emits, so the shown holding freezes. That goes to
-     * state, not to an effect: at init the screen has not subscribed, and an unbuffered effect
-     * would be dropped. Calling this again re-subscribes, since a finished flow cannot resume.
-     * Only do that while [CoinDetailUiState.holdingError] is set, or two collectors could run.
+     * A failure is the last value this flow emits, so the shown holding stops updating. The
+     * error goes to state, not to an effect: at init nothing collects effects yet, so the
+     * effect would be lost. A finished flow cannot start again, so calling this function once
+     * more creates a new one. Do that only while [CoinDetailUiState.holdingError] is set,
+     * because then the old collector has already finished.
      */
     private fun observeHolding() {
         viewModelScope.launch {
@@ -96,8 +97,9 @@ class CoinDetailViewModel @Inject constructor(
     }
 
     /**
-     * Drops rejected input, so the field cannot hold what [CoinDetailUiState.parsedQuantity]
-     * refuses. Commas become dots, or `0,5` from a decimal keyboard would silently block saving.
+     * Rejected input is dropped instead of being shown, so the field can never hold a value
+     * that [CoinDetailUiState.parsedQuantity] refuses. A comma becomes a dot. Otherwise `0,5`
+     * from a decimal keyboard would block saving, and the user would not know why.
      */
     private fun updateQuantity(value: String) {
         val normalized = value.replace(',', '.')
@@ -106,12 +108,13 @@ class CoinDetailViewModel @Inject constructor(
     }
 
     /**
-     * Re-syncs the field from the value just written, because the database echo lands later and
-     * would wipe out anything typed in between.
+     * The field is set from the value we just wrote, not from the database. The database sends
+     * the same value back later, and by then it would replace anything typed in the meantime.
      *
-     * A write landing while [observeHolding] is dead means the database takes queries again, so a
-     * re-read is worth it: an unparseable stored quantity breaks every read while writes still
-     * work, and saving over it fixes the row. A full disk fails the write too, so this never runs.
+     * If the write succeeds while [observeHolding] is dead, the database accepts queries again,
+     * so it is worth reading once more. A stored quantity in the wrong format breaks every read
+     * while writes still work, and saving a new value replaces that row. A full disk breaks the
+     * write too, so this code never runs in that case.
      */
     private fun saveHolding() {
         val quantity = _state.value.parsedQuantity ?: return

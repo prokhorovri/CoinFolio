@@ -9,8 +9,8 @@ import me.prokhorov.coinfolio.R
 import me.prokhorov.coinfolio.domain.result.AppError
 
 /**
- * `:data` only classifies a failure, presentation gives it words. Keeping the copy in
- * `strings.xml` is what lets it follow the device locale.
+ * `:data` only says which kind of failure it is. Presentation turns it into a message. The text
+ * stays in `strings.xml` so it follows the language of the device.
  */
 @Composable
 @ReadOnlyComposable
@@ -24,8 +24,8 @@ fun AppError.asMessage(): String {
 }
 
 /**
- * For call sites outside composition. Snackbar effects are collected in a coroutine, where
- * `stringResource` isn't available.
+ * For code outside composition. Snackbar effects are collected in a coroutine, and
+ * `stringResource` cannot be used there.
  */
 fun AppError.asMessage(context: Context): String {
     val args = messageArgs
@@ -50,8 +50,8 @@ private val AppError.messageRes: Int
     }
 
 /**
- * Only `Server` has a format argument. The overloads skip `String.format` when this is empty, so
- * an unescaped `%` in a placeholder-free string can't throw.
+ * Only `Server` has a format argument. When this is empty, both functions above skip
+ * `String.format`. A string with no placeholders can then contain a `%` without an error.
  */
 private val AppError.messageArgs: Array<Any>
     get() = if (this is AppError.Server) arrayOf(code) else emptyArray()

@@ -7,26 +7,27 @@ import java.math.BigDecimal
 
 data class CoinDetailUiState(
     val coinId: String,
-    /** Tracks the in-flight load. Nothing reads it yet: the screen keys off [coin] being null. */
+    /** Tracks the running load. Nothing reads it yet: the screen checks if [coin] is null. */
     val isLoading: Boolean = false,
     val coin: CoinDetail? = null,
     val error: AppError? = null,
     /**
-     * What the user typed, or `null` until they touch the field. That null is what makes
-     * [quantityInput] fall back to the stored holding, so the field prefills on open and stops
-     * following the database from the first keystroke, even one that beats the holding to it.
+     * What the user typed, or `null` until they touch the field. While it is null,
+     * [quantityInput] shows the stored holding, so the field is filled when the screen opens.
+     * The first keystroke sets it and the field stops following the database, even if that
+     * keystroke happens before the holding arrives.
      */
     val editedQuantity: String? = null,
     val savedQuantity: BigDecimal? = null,
     /**
-     * Why the stored holding could not be read. Stays in the holding section rather than taking
-     * over the screen like [error], and while it is set nothing is observing the database.
+     * Why the stored holding could not be read. It is shown inside the holding section only, not
+     * on the whole screen like [error]. While it is set, nothing is observing the database.
      */
     val holdingError: AppError? = null,
 ) {
     val quantityInput: String = editedQuantity ?: savedQuantity?.formatAsQuantity().orEmpty()
 
-    /** Blocks saving on empty or malformed input. `0` is allowed: it clears the holding. */
+    /** Blocks saving if input is empty or not a number. `0` is allowed: it clears the holding. */
     val parsedQuantity: BigDecimal? = quantityInput.trim()
         .takeIf(String::isNotEmpty)
         ?.toBigDecimalOrNull()

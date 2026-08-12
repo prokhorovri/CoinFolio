@@ -10,9 +10,9 @@ import me.prokhorov.coinfolio.domain.result.AppError
 import me.prokhorov.coinfolio.domain.result.Resource
 
 /**
- * Turns any failure from a Room write into a [Resource], so nothing reaches a ViewModel as an
- * exception. The read side of the same idea is [asResource]. `ensureActive()` excludes
- * cancellation, which is what leaving a screen mid-write looks like, not a failure.
+ * Turns any failure of a Room write into a [Resource], so a ViewModel never gets an exception.
+ * [asResource] does the same for reads. `ensureActive()` skips cancellation, which happens when
+ * the user leaves the screen during a write. That is not a failure.
  */
 internal suspend fun <T> dbCall(block: suspend () -> T): Resource<T> {
     return try {
@@ -24,10 +24,10 @@ internal suspend fun <T> dbCall(block: suspend () -> T): Resource<T> {
 }
 
 /**
- * Wraps a Room query flow so a failure arrives as a value instead of tearing down the collecting
- * coroutine. No cancellation guard here, unlike [dbCall]: `catch` is documented as transparent to
- * exceptions thrown to cancel the flow. The flow ends after a failure, since Room does not re-emit
- * once its query breaks.
+ * Wraps a Room query flow so a failure arrives as a value and does not stop the collecting
+ * coroutine with an exception. There is no cancellation check here, unlike [dbCall], because
+ * `catch` is documented to ignore exceptions that cancel the flow. The flow ends after a
+ * failure, because Room does not emit again once its query is broken.
  */
 internal fun <T> Flow<T>.asResource(): Flow<Resource<T>> {
     return map<T, Resource<T>> { Resource.Success(it) }
@@ -37,10 +37,10 @@ internal fun <T> Flow<T>.asResource(): Flow<Resource<T>> {
 }
 
 /**
- * [SQLException] is the umbrella Room throws under, covering a full disk and a corrupt database
- * alike. Anything else reaching here is a bug on our side rather than a storage problem. The
- * receiver is [Throwable] because that is what `catch` hands its action; [dbCall] still catches
- * only `Exception`, so an `Error` keeps propagating.
+ * Room throws [SQLException] for storage problems, both a full disk and a broken database file.
+ * Anything else here is our own bug, not a storage problem. The receiver is [Throwable] because
+ * `catch` gives its action a [Throwable]. [dbCall] still catches only `Exception`, so an `Error`
+ * is not caught there.
  */
 private fun Throwable.toAppError(): AppError {
     return when (this) {

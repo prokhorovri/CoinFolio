@@ -3,10 +3,10 @@ package me.prokhorov.coinfolio.domain.model
 import java.math.BigDecimal
 
 /**
- * The single-coin view, kept separate from [Coin] because the markets endpoint behind the list
- * cannot fill these fields. Merging the two would make every extra field nullable for list items.
- * Nullable here means the API genuinely omits it: young coins have no all-time high, and some
- * have no reported supply.
+ * The model for one coin. It is separate from [Coin] because the endpoint used for the list
+ * cannot provide these fields. One shared model would make every extra field nullable for list
+ * items too. A nullable field here means the API really does not return it: new coins have no
+ * all-time high, and some coins report no supply.
  */
 data class CoinDetail(
     val id: String,

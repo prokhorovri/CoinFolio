@@ -17,8 +17,9 @@ interface CoinApi {
     ): List<CoinDto>
 
     /**
-     * The bare endpoint also returns every exchange ticker plus community and developer stats,
-     * hundreds of KB per call. The flags below trim it to the market data the detail screen shows.
+     * Without these flags the endpoint also returns every exchange ticker and the community and
+     * developer stats, a few hundred KB per call. The flags keep only the market data that the
+     * detail screen shows.
      */
     @GET("coins/{id}")
     suspend fun getCoinDetail(
