@@ -114,22 +114,34 @@ class CoinDetailViewModel @Inject constructor(
      * If the write succeeds while [observeHolding] is dead, the database accepts queries again,
      * so it is worth reading once more. A stored quantity in the wrong format breaks every read
      * while writes still work, and saving a new value replaces that row. A full disk breaks the
-     * write too, so this code never runs in that case.
+     * writing too, so this code never runs in that case.
+     *
+     * A save already in flight blocks a new one. The button is disabled while it runs, but an
+     * intent can also arrive from somewhere else, so the guard belongs here too.
      */
     private fun saveHolding() {
-        val quantity = _state.value.parsedQuantity ?: return
+        val currentState = _state.value
+        if (currentState.isSaving) return
+        val quantity = currentState.parsedQuantity ?: return
+
+        _state.update { it.copy(isSaving = true) }
         viewModelScope.launch {
             val holding = Holding(coinId = coinId, quantity = quantity)
             when (val result = saveHoldingUseCase(holding)) {
                 is Resource.Success -> {
-                    _state.update { it.copy(editedQuantity = quantity.formatAsQuantity()) }
+                    _state.update {
+                        it.copy(isSaving = false, editedQuantity = quantity.formatAsQuantity())
+                    }
                     if (_state.value.holdingError != null) {
                         observeHolding()
                     }
                     _effect.emit(CoinDetailEffect.HoldingSaved)
                 }
 
-                is Resource.Failure -> _effect.emit(CoinDetailEffect.ShowError(result.error))
+                is Resource.Failure -> {
+                    _state.update { it.copy(isSaving = false) }
+                    _effect.emit(CoinDetailEffect.ShowError(result.error))
+                }
             }
         }
     }

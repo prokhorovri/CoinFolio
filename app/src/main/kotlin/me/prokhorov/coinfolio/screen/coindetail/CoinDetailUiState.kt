@@ -24,6 +24,8 @@ data class CoinDetailUiState(
      * on the whole screen like [error]. While it is set, nothing is observing the database.
      */
     val holdingError: AppError? = null,
+    /** True while a save is running. It blocks a second save through [canSave]. */
+    val isSaving: Boolean = false,
 ) {
     val quantityInput: String = editedQuantity ?: savedQuantity?.formatAsQuantity().orEmpty()
 
@@ -33,5 +35,5 @@ data class CoinDetailUiState(
         ?.toBigDecimalOrNull()
         ?.takeIf { it.signum() >= 0 }
 
-    val canSave: Boolean = coin != null && parsedQuantity != null
+    val canSave: Boolean = coin != null && parsedQuantity != null && !isSaving
 }
