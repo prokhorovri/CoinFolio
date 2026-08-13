@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -34,8 +35,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -72,6 +75,7 @@ fun CoinDetailScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val lifecycleOwner = LocalLifecycleOwner.current
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
     val savedMessage by rememberUpdatedState(
         stringResource(R.string.coin_detail_screen_saved_text)
     )
@@ -84,7 +88,12 @@ fun CoinDetailScreen(
                         snackbarHostState.showSnackbar(effect.error.asMessage(context))
                     }
 
-                    is CoinDetailEffect.HoldingSaved -> snackbarHostState.showSnackbar(savedMessage)
+                    // The edit is over, so the keyboard goes away. It has to happen before the
+                    // snackbar call, which waits until the snackbar is gone.
+                    is CoinDetailEffect.HoldingSaved -> {
+                        focusManager.clearFocus()
+                        snackbarHostState.showSnackbar(savedMessage)
+                    }
                 }
             }
         }
@@ -323,6 +332,8 @@ private fun HoldingSection(
     onSaveClick: () -> Unit,
 ) {
     val errorMessage = holdingError?.asMessage()
+    val focusManager = LocalFocusManager.current
+
     Column(verticalArrangement = Arrangement.spacedBy(Spacing8)) {
         Text(
             text = stringResource(R.string.coin_detail_screen_holding_title_text),
@@ -347,7 +358,13 @@ private fun HoldingSection(
                 Text(text = stringResource(R.string.coin_detail_screen_quantity_label_text))
             },
             singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            // Without an explicit action the Done key only hides the keyboard, and the field
+            // keeps the cursor.
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Decimal,
+                imeAction = ImeAction.Done,
+            ),
+            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
         )
         Button(onClick = onSaveClick, enabled = canSave) {
             Text(text = stringResource(R.string.coin_detail_screen_save_text))
