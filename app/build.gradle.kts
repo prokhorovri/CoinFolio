@@ -13,7 +13,10 @@ android {
 
     defaultConfig {
         applicationId = "me.prokhorov.coinfolio"
-        minSdk = 26
+        // Android 8 (API 26 and 27) behaves differently in Compose text input: focus is not
+        // cleared, so the keyboard stays open after a save and no public API closes it.
+        // The screens are verified from API 28 upward, so that is the floor.
+        minSdk = 28
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
