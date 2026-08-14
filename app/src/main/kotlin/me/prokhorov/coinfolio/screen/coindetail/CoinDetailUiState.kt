@@ -7,8 +7,6 @@ import java.math.BigDecimal
 
 data class CoinDetailUiState(
     val coinId: String,
-    /** Tracks the running load. Nothing reads it yet: the screen checks if [coin] is null. */
-    val isLoading: Boolean = false,
     val coin: CoinDetail? = null,
     val error: AppError? = null,
     /**

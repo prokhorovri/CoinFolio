@@ -38,7 +38,7 @@ class CoinDetailViewModel @Inject constructor(
 
     private val coinId = savedStateHandle.toRoute<ScreenRoute.CoinDetail>().id
 
-    private val _state = MutableStateFlow(CoinDetailUiState(coinId = coinId, isLoading = true))
+    private val _state = MutableStateFlow(CoinDetailUiState(coinId = coinId))
     val state: StateFlow<CoinDetailUiState> = _state.asStateFlow()
 
     private val _effect = MutableSharedFlow<CoinDetailEffect>()
@@ -57,17 +57,23 @@ class CoinDetailViewModel @Inject constructor(
         }
     }
 
+    /**
+     * One error goes to one place. While the coin is on screen the error is temporary, so it goes
+     * to a snackbar. While the screen is still empty the error is the whole screen, so it goes to
+     * the state and a snackbar would only repeat it.
+     */
     private fun loadCoin() {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, error = null) }
+            _state.update { it.copy(error = null) }
             when (val result = getCoinDetailUseCase(coinId)) {
-                is Resource.Success -> _state.update {
-                    it.copy(isLoading = false, coin = result.data)
-                }
+                is Resource.Success -> _state.update { it.copy(coin = result.data) }
 
                 is Resource.Failure -> {
-                    _state.update { it.copy(isLoading = false, error = result.error) }
-                    _effect.emit(CoinDetailEffect.ShowError(result.error))
+                    val hasData = _state.value.coin != null
+                    _state.update { it.copy(error = if (hasData) null else result.error) }
+                    if (hasData) {
+                        _effect.emit(CoinDetailEffect.ShowError(result.error))
+                    }
                 }
             }
         }

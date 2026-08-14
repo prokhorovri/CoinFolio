@@ -36,6 +36,11 @@ class CoinListViewModel @Inject constructor(
         }
     }
 
+    /**
+     * One error goes to one place. While coins are on screen the error is temporary, so it goes to
+     * a snackbar. While the list is still empty the error is the whole screen, so it goes to the
+     * state and a snackbar would only repeat it.
+     */
     private fun loadCoins() {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
@@ -45,8 +50,13 @@ class CoinListViewModel @Inject constructor(
                 }
 
                 is Resource.Failure -> {
-                    _state.update { it.copy(isLoading = false, error = result.error) }
-                    _effect.emit(CoinListEffect.ShowError(result.error))
+                    val hasData = _state.value.coins.isNotEmpty()
+                    _state.update {
+                        it.copy(isLoading = false, error = if (hasData) null else result.error)
+                    }
+                    if (hasData) {
+                        _effect.emit(CoinListEffect.ShowError(result.error))
+                    }
                 }
             }
         }
