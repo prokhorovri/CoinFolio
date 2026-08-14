@@ -249,15 +249,17 @@ private fun CoinSummary(coin: CoinDetail) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing4)) {
             Text(text = coin.symbol.uppercase(), style = MaterialTheme.typography.bodyMedium)
             Text(
-                text = coin.currentPrice.formatAsUsd(),
+                text = coin.currentPrice?.formatAsUsd() ?: stringResource(R.string.no_value_text),
                 style = MaterialTheme.typography.headlineSmall,
             )
+
+            val percent = coin.priceChangePercent24h
             Text(
-                text = coin.priceChangePercent24h.formatAsPercent(),
-                color = if (coin.priceChangePercent24h.isGain()) {
-                    MaterialTheme.extendedColors.positive
-                } else {
-                    MaterialTheme.extendedColors.negative
+                text = percent?.formatAsPercent() ?: stringResource(R.string.no_value_text),
+                color = when {
+                    percent == null -> Color.Unspecified
+                    percent.isGain() -> MaterialTheme.extendedColors.positive
+                    else -> MaterialTheme.extendedColors.negative
                 },
                 style = MaterialTheme.typography.bodyMedium,
             )

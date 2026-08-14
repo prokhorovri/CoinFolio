@@ -2,7 +2,6 @@ package me.prokhorov.coinfolio.data.mapper
 
 import me.prokhorov.coinfolio.data.remote.dto.CoinDetailDto
 import me.prokhorov.coinfolio.domain.model.CoinDetail
-import java.math.BigDecimal
 
 fun CoinDetailDto.toDomain(): CoinDetail {
     return CoinDetail(
@@ -10,8 +9,8 @@ fun CoinDetailDto.toDomain(): CoinDetail {
         symbol = symbol,
         name = name,
         imageUrl = image?.large.orEmpty(),
-        currentPrice = marketData?.currentPrice?.usd ?: BigDecimal.ZERO,
-        priceChangePercent24h = marketData?.priceChangePercentage24h ?: BigDecimal.ZERO,
+        currentPrice = marketData?.currentPrice?.usd,
+        priceChangePercent24h = marketData?.priceChangePercentage24h,
         marketCapRank = marketCapRank,
         high24h = marketData?.high24h?.usd,
         low24h = marketData?.low24h?.usd,

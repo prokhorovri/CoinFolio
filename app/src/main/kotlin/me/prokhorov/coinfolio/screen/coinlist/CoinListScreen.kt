@@ -26,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
@@ -200,13 +201,18 @@ private fun CoinRow(coin: Coin, onClick: () -> Unit) {
             Text(text = coin.symbol.uppercase(), style = MaterialTheme.typography.bodySmall)
         }
         Column(horizontalAlignment = Alignment.End) {
-            Text(text = coin.currentPrice.formatAsUsd(), style = MaterialTheme.typography.bodyLarge)
             Text(
-                text = coin.priceChangePercent24h.formatAsPercent(),
-                color = if (coin.priceChangePercent24h.isGain()) {
-                    MaterialTheme.extendedColors.positive
-                } else {
-                    MaterialTheme.extendedColors.negative
+                text = coin.currentPrice?.formatAsUsd() ?: stringResource(R.string.no_value_text),
+                style = MaterialTheme.typography.bodyLarge,
+            )
+
+            val percent = coin.priceChangePercent24h
+            Text(
+                text = percent?.formatAsPercent() ?: stringResource(R.string.no_value_text),
+                color = when {
+                    percent == null -> Color.Unspecified
+                    percent.isGain() -> MaterialTheme.extendedColors.positive
+                    else -> MaterialTheme.extendedColors.negative
                 },
                 style = MaterialTheme.typography.bodySmall,
             )

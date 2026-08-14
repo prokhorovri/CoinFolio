@@ -5,6 +5,7 @@
     <!--region Common-->
     <string name="retry_text">Retry</string>
     <string name="back_text">Back</string>
+    <string name="no_value_text">—</string>
     <!--endregion-->
 
     <!--region Errors-->

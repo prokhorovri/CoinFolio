@@ -14,7 +14,7 @@ data class CoinDto(
     val imageUrl: String,
     @SerialName("current_price")
     @Serializable(with = BigDecimalSerializer::class)
-    val currentPrice: BigDecimal,
+    val currentPrice: BigDecimal?,
     @SerialName("price_change_percentage_24h")
     @Serializable(with = BigDecimalSerializer::class)
     val priceChangePercentage24h: BigDecimal?,

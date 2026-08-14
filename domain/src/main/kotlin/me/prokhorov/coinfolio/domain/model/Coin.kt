@@ -7,6 +7,7 @@ data class Coin(
     val symbol: String,
     val name: String,
     val imageUrl: String,
-    val currentPrice: BigDecimal,
-    val priceChangePercent24h: BigDecimal,
+    /** CoinGecko sends no price for some small or delisted coins. The screen shows a dash then. */
+    val currentPrice: BigDecimal?,
+    val priceChangePercent24h: BigDecimal?,
 )
