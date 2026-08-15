@@ -24,10 +24,15 @@ fun BigDecimal.formatAsUsd(): String {
 
         else -> magnitude.round(MathContext(SMALL_PRICE_DIGITS, RoundingMode.HALF_UP))
     }
-    return sign() + "$" + amount.toPlainString()
+    return sign() + "$" + amount.toPlainString().localizeDecimalSeparator()
 }
 
-/** Coin amounts keep their full precision. Only the extra zeros at the end are removed. */
+/**
+ * Coin amounts keep their full precision. Only the extra zeros at the end are removed.
+ *
+ * This one keeps the dot on purpose. It is the canonical form that Room and [BigDecimal] use, and
+ * [QuantityInput.format] builds the text of the field from it.
+ */
 fun BigDecimal.formatAsQuantity(): String {
     return stripTrailingZeros().toPlainString()
 }
@@ -39,7 +44,7 @@ fun BigDecimal.formatAsQuantity(): String {
 fun BigDecimal.formatAsPercent(): String {
     val rounded = setScale(2, RoundingMode.HALF_UP)
     val sign = if (rounded.signum() >= 0) "+" else ""
-    return sign + rounded.toPlainString() + "%"
+    return sign + rounded.toPlainString().localizeDecimalSeparator() + "%"
 }
 
 /**
@@ -59,7 +64,7 @@ fun BigDecimal.formatAsCompact(): String {
         magnitude >= MILLION -> magnitude.scaleTo(unit = MILLION, suffix = "M")
         else -> magnitude.setScale(2, RoundingMode.HALF_UP).toPlainString()
     }
-    return sign() + amount
+    return sign() + amount.localizeDecimalSeparator()
 }
 
 fun BigDecimal.formatAsCompactUsd(): String {

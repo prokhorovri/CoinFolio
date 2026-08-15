@@ -36,6 +36,9 @@
     <!-- Coin detail screen: holding -->
     <string name="coin_detail_screen_holding_title_text">Your holding</string>
     <string name="coin_detail_screen_quantity_label_text">Quantity</string>
+    <string name="coin_detail_screen_quantity_invalid_text">Digits and one separator only</string>
+    <string name="coin_detail_screen_quantity_too_large_text">This number is too large</string>
+    <string name="coin_detail_screen_quantity_decimals_text">At most %1$d decimal places</string>
     <string name="coin_detail_screen_not_held_text">Not in your portfolio yet</string>
     <string name="coin_detail_screen_save_text">Save</string>
     <string name="coin_detail_screen_saved_text">Holding saved</string>

@@ -19,14 +19,11 @@ import me.prokhorov.coinfolio.domain.usecase.GetCoinDetailUseCase
 import me.prokhorov.coinfolio.domain.usecase.GetHoldingUseCase
 import me.prokhorov.coinfolio.domain.usecase.SaveHoldingUseCase
 import me.prokhorov.coinfolio.navigation.ScreenRoute
-import me.prokhorov.coinfolio.util.formatAsQuantity
+import me.prokhorov.coinfolio.util.LengthProblem
+import me.prokhorov.coinfolio.util.QuantityInput
+import me.prokhorov.coinfolio.util.QuantityInputResult
+import java.math.BigDecimal
 import javax.inject.Inject
-
-/**
- * Limits how large a pasted number can be. `1E+999999999` is valid, but after formatting or
- * saving to Room it becomes a string that is one gigabyte long.
- */
-private val QUANTITY_PATTERN = Regex("""\d{0,15}(\.\d{0,18})?""")
 
 @HiltViewModel
 class CoinDetailViewModel @Inject constructor(
@@ -43,6 +40,16 @@ class CoinDetailViewModel @Inject constructor(
 
     private val _effect = MutableSharedFlow<CoinDetailEffect>()
     val effect: SharedFlow<CoinDetailEffect> = _effect.asSharedFlow()
+
+    /**
+     * True after the first keystroke. Until then the field follows the database, and an untouched
+     * field is never marked as wrong. The screen never draws it, so it stays out of the state.
+     *
+     * Only the main thread touches it, so a plain field is safe: `viewModelScope` runs on
+     * `Dispatchers.Main.immediate`, and a flow collects on the thread of the collector. Do not
+     * start a coroutine here with another dispatcher.
+     */
+    private var isQuantityEdited = false
 
     init {
         onIntent(CoinDetailIntent.LoadCoin)
@@ -64,13 +71,13 @@ class CoinDetailViewModel @Inject constructor(
      */
     private fun loadCoin() {
         viewModelScope.launch {
-            _state.update { it.copy(error = null) }
+            updateState { it.copy(error = null) }
             when (val result = getCoinDetailUseCase(coinId)) {
-                is Resource.Success -> _state.update { it.copy(coin = result.data) }
+                is Resource.Success -> updateState { it.copy(coin = result.data) }
 
                 is Resource.Failure -> {
                     val hasData = _state.value.coin != null
-                    _state.update { it.copy(error = if (hasData) null else result.error) }
+                    updateState { it.copy(error = if (hasData) null else result.error) }
                     if (hasData) {
                         _effect.emit(CoinDetailEffect.ShowError(result.error))
                     }
@@ -80,37 +87,50 @@ class CoinDetailViewModel @Inject constructor(
     }
 
     /**
-     * A failure is the last value this flow emits, so the shown holding stops updating. The
-     * error goes to state, not to an effect: at init nothing collects effects yet, so the
-     * effect would be lost. A finished flow cannot start again, so calling this function once
-     * more creates a new one. Do that only while [CoinDetailUiState.holdingError] is set,
-     * because then the old collector has already finished.
+     * A failure is the last value of this flow, so the holding stops updating. The error goes to
+     * the state and not to an effect, because nothing collects effects at init yet.
+     *
+     * A finished flow cannot start again. Calling this function makes a new one, so call it only
+     * while [CoinDetailUiState.holdingError] is set, when the old collector is already done.
+     *
+     * The stored value also fills the field, but only while the user has typed nothing. After the
+     * first keystroke the field belongs to the user, even if the database answers later.
      */
     private fun observeHolding() {
         viewModelScope.launch {
             getHoldingUseCase(coinId).collect { result ->
                 when (result) {
-                    is Resource.Success -> _state.update {
-                        it.copy(savedQuantity = result.data?.quantity, holdingError = null)
+                    is Resource.Success -> {
+                        val quantity = result.data?.quantity
+                        updateState {
+                            it.copy(
+                                savedQuantity = quantity,
+                                quantityInput = if (isQuantityEdited) {
+                                    it.quantityInput
+                                } else {
+                                    quantity?.let(QuantityInput::format).orEmpty()
+                                },
+                                holdingError = null,
+                            )
+                        }
                     }
 
-                    is Resource.Failure -> _state.update {
-                        it.copy(holdingError = result.error)
-                    }
+                    is Resource.Failure -> updateState { it.copy(holdingError = result.error) }
                 }
             }
         }
     }
 
     /**
-     * Rejected input is dropped instead of being shown, so the field can never hold a value
-     * that [CoinDetailUiState.parsedQuantity] refuses. A comma becomes a dot. Otherwise `0,5`
-     * from a decimal keyboard would block saving, and the user would not know why.
+     * The text is stored as it arrives, always. Dropping it here would split the truth in two:
+     * the field would show the new text while the state kept the old one, and nothing would tell
+     * the user why the number cannot be saved.
+     *
+     * [derived] then says what is wrong with it and whether it can be saved.
      */
     private fun updateQuantity(value: String) {
-        val normalized = value.replace(',', '.')
-        if (!normalized.matches(QUANTITY_PATTERN)) return
-        _state.update { it.copy(editedQuantity = normalized) }
+        isQuantityEdited = true
+        updateState { it.copy(quantityInput = value) }
     }
 
     /**
@@ -128,15 +148,16 @@ class CoinDetailViewModel @Inject constructor(
     private fun saveHolding() {
         val currentState = _state.value
         if (currentState.isSaving) return
-        val quantity = currentState.parsedQuantity ?: return
 
-        _state.update { it.copy(isSaving = true) }
+        val quantity = QuantityInput.normalize(currentState.quantityInput).toQuantity() ?: return
+
+        updateState { it.copy(isSaving = true) }
         viewModelScope.launch {
             val holding = Holding(coinId = coinId, quantity = quantity)
             when (val result = saveHoldingUseCase(holding)) {
                 is Resource.Success -> {
-                    _state.update {
-                        it.copy(isSaving = false, editedQuantity = quantity.formatAsQuantity())
+                    updateState {
+                        it.copy(isSaving = false, quantityInput = QuantityInput.format(quantity))
                     }
                     if (_state.value.holdingError != null) {
                         observeHolding()
@@ -145,10 +166,49 @@ class CoinDetailViewModel @Inject constructor(
                 }
 
                 is Resource.Failure -> {
-                    _state.update { it.copy(isSaving = false) }
+                    updateState { it.copy(isSaving = false) }
                     _effect.emit(CoinDetailEffect.ShowError(result.error))
                 }
             }
+        }
+    }
+
+    /**
+     * The only way to change the state. It runs [derived] after every change, so the fields that
+     * follow from the others can never fall behind. Without it each caller would have to remember
+     * which of them its change affects.
+     */
+    private fun updateState(transform: (CoinDetailUiState) -> CoinDetailUiState) {
+        _state.update { transform(it).derived() }
+    }
+
+    /** Fills the fields that follow from the others. */
+    private fun CoinDetailUiState.derived(): CoinDetailUiState {
+        val result = QuantityInput.normalize(quantityInput)
+        return copy(
+            quantityError = if (isQuantityEdited) result.toQuantityError() else null,
+            canSave = coin != null && !isSaving && result.toQuantity() != null,
+        )
+    }
+}
+
+/** Blocks saving if the text is empty or not a number. `0` is allowed: it clears the holding. */
+private fun QuantityInputResult.toQuantity(): BigDecimal? {
+    return (this as? QuantityInputResult.Valid)
+        ?.text
+        ?.takeIf(String::isNotEmpty)
+        ?.let(QuantityInput::toCanonical)
+        ?.toBigDecimalOrNull()
+        ?.takeIf { it.signum() >= 0 }
+}
+
+private fun QuantityInputResult.toQuantityError(): QuantityError? {
+    return when (this) {
+        is QuantityInputResult.Valid -> null
+        is QuantityInputResult.InvalidCharacter -> QuantityError.INVALID_CHARACTER
+        is QuantityInputResult.TooLong -> when (problem) {
+            LengthProblem.INTEGER_DIGITS -> QuantityError.TOO_MANY_INTEGER_DIGITS
+            LengthProblem.FRACTION_DIGITS -> QuantityError.TOO_MANY_FRACTION_DIGITS
         }
     }
 }

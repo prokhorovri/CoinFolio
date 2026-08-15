@@ -13,8 +13,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -35,6 +37,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -61,11 +64,11 @@ import me.prokhorov.coinfolio.theme.Spacing24
 import me.prokhorov.coinfolio.theme.Spacing4
 import me.prokhorov.coinfolio.theme.Spacing8
 import me.prokhorov.coinfolio.theme.extendedColors
+import me.prokhorov.coinfolio.util.QuantityInput
 import me.prokhorov.coinfolio.util.asMessage
 import me.prokhorov.coinfolio.util.formatAsCompact
 import me.prokhorov.coinfolio.util.formatAsCompactUsd
 import me.prokhorov.coinfolio.util.formatAsPercent
-import me.prokhorov.coinfolio.util.formatAsQuantity
 import me.prokhorov.coinfolio.util.formatAsUsd
 import me.prokhorov.coinfolio.util.isGain
 import java.math.BigDecimal
@@ -158,6 +161,7 @@ private fun CoinDetailContent(
                 CoinDetailBody(
                     coin = state.coin,
                     quantityInput = state.quantityInput,
+                    quantityError = state.quantityError,
                     savedQuantity = state.savedQuantity,
                     holdingError = state.holdingError,
                     canSave = state.canSave,
@@ -203,6 +207,7 @@ private fun ErrorState(message: String, onRetry: () -> Unit, contentPadding: Pad
 private fun CoinDetailBody(
     coin: CoinDetail,
     quantityInput: String,
+    quantityError: QuantityError?,
     savedQuantity: BigDecimal?,
     holdingError: AppError?,
     canSave: Boolean,
@@ -225,6 +230,7 @@ private fun CoinDetailBody(
         HoldingSection(
             symbol = coin.symbol,
             quantityInput = quantityInput,
+            quantityError = quantityError,
             savedQuantity = savedQuantity,
             holdingError = holdingError,
             canSave = canSave,
@@ -334,6 +340,7 @@ private fun CoinStatRow(label: String, value: String) {
 private fun HoldingSection(
     symbol: String,
     quantityInput: String,
+    quantityError: QuantityError?,
     savedQuantity: BigDecimal?,
     holdingError: AppError?,
     canSave: Boolean,
@@ -342,6 +349,48 @@ private fun HoldingSection(
 ) {
     val errorMessage = holdingError?.asMessage()
     val focusManager = LocalFocusManager.current
+    val quantityState = rememberTextFieldState()
+
+    val quantityErrorMessage = when (quantityError) {
+        null -> null
+        QuantityError.INVALID_CHARACTER -> {
+            stringResource(R.string.coin_detail_screen_quantity_invalid_text)
+        }
+
+        QuantityError.TOO_MANY_INTEGER_DIGITS -> {
+            stringResource(R.string.coin_detail_screen_quantity_too_large_text)
+        }
+
+        QuantityError.TOO_MANY_FRACTION_DIGITS -> {
+            stringResource(
+                R.string.coin_detail_screen_quantity_decimals_text,
+                QuantityInput.MAX_FRACTION_DIGITS,
+            )
+        }
+    }
+    val currentInput by rememberUpdatedState(quantityInput)
+
+    // The field keeps its own text, so the cursor stays in place, and this effect sends it up.
+    // It runs once, because quantityState never changes, so only currentInput stays fresh.
+    // Text the ViewModel already knows is skipped: it would mark the field as edited.
+    LaunchedEffect(quantityState) {
+        snapshotFlow { quantityState.text.toString() }.collect { text ->
+            if (text != currentInput) {
+                onQuantityChange(text)
+            }
+        }
+    }
+
+    // The other direction: text from the ViewModel goes into the field, like the saved holding
+    // when the screen opens.
+    // TODO: drop this once the effects come from a Channel, not a SharedFlow. Then a new
+    //  CoinDetailEffect.SetQuantity(text) can set the text where the effects are collected:
+    //  is CoinDetailEffect.SetQuantity -> quantityState.setTextAndPlaceCursorAtEnd(effect.text)
+    LaunchedEffect(quantityInput) {
+        if (quantityInput != quantityState.text.toString()) {
+            quantityState.setTextAndPlaceCursorAtEnd(quantityInput)
+        }
+    }
 
     Column(verticalArrangement = Arrangement.spacedBy(Spacing8)) {
         Text(
@@ -351,7 +400,7 @@ private fun HoldingSection(
         Text(
             text = errorMessage ?: when (savedQuantity) {
                 null -> stringResource(R.string.coin_detail_screen_not_held_text)
-                else -> "${savedQuantity.formatAsQuantity()} ${symbol.uppercase()}"
+                else -> "${QuantityInput.format(savedQuantity)} ${symbol.uppercase()}"
             },
             color = when (errorMessage) {
                 null -> Color.Unspecified
@@ -360,20 +409,22 @@ private fun HoldingSection(
             style = MaterialTheme.typography.bodyMedium,
         )
         OutlinedTextField(
-            value = quantityInput,
-            onValueChange = onQuantityChange,
+            state = quantityState,
             modifier = Modifier.fillMaxWidth(),
             label = {
                 Text(text = stringResource(R.string.coin_detail_screen_quantity_label_text))
             },
-            singleLine = true,
+            supportingText = quantityErrorMessage?.let { { Text(text = it) } },
+            isError = quantityErrorMessage != null,
+            inputTransformation = QuantityInputTransformation,
             // Without an explicit action the Done key only hides the keyboard, and the field
             // keeps the cursor.
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Decimal,
                 imeAction = ImeAction.Done,
             ),
-            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+            onKeyboardAction = { focusManager.clearFocus() },
+            lineLimits = TextFieldLineLimits.SingleLine,
         )
         Button(onClick = onSaveClick, enabled = canSave) {
             Text(text = stringResource(R.string.coin_detail_screen_save_text))
@@ -404,6 +455,8 @@ private fun CoinDetailContentPreview() {
                     circulatingSupply = BigDecimal("19700000"),
                 ),
                 savedQuantity = BigDecimal("0.5"),
+                quantityInput = "0.5",
+                canSave = true,
             ),
             snackbarHostState = remember { SnackbarHostState() },
             onBackClick = {},
