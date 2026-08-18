@@ -54,6 +54,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.flow.drop
 import me.prokhorov.coinfolio.R
 import me.prokhorov.coinfolio.domain.model.CoinDetail
 import me.prokhorov.coinfolio.domain.result.AppError
@@ -374,11 +375,15 @@ private fun HoldingSection(
     // It runs once, because quantityState never changes, so only currentInput stays fresh.
     // Text the ViewModel already knows is skipped: it would mark the field as edited.
     LaunchedEffect(quantityState) {
-        snapshotFlow { quantityState.text.toString() }.collect { text ->
-            if (text != currentInput) {
-                onQuantityChange(text)
+        snapshotFlow { quantityState.text.toString() }
+            // The text the field starts with is not an edit. Sending it up would erase the
+            // quantity that came from the database.
+            .drop(1)
+            .collect { text ->
+                if (text != currentInput) {
+                    onQuantityChange(text)
+                }
             }
-        }
     }
 
     // The other direction: text from the ViewModel goes into the field, like the saved holding
