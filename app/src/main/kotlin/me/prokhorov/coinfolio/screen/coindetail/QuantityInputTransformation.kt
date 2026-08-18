@@ -1,5 +1,6 @@
 package me.prokhorov.coinfolio.screen.coindetail
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.TextFieldBuffer
 import me.prokhorov.coinfolio.util.QuantityInput
@@ -15,12 +16,19 @@ import me.prokhorov.coinfolio.util.QuantityInputResult
  * Cleaning rewrites the whole text, so the cursor is put back where the user left it.
  */
 object QuantityInputTransformation : InputTransformation {
+    @OptIn(ExperimentalFoundationApi::class)
     override fun TextFieldBuffer.transformInput() {
         val typed = asCharSequence().toString()
         val cleaned = QuantityInput.normalize(typed).cleanedText
 
         if (cleaned == null) {
-            revertAllChanges()
+            // Moving the cursor calls this too, and changeCount is 0 for it, because changes
+            // only holds text edits. Text that is already wrong, for example after the user
+            // changed the language, must stay editable: reverting a cursor move would freeze
+            // the field, and nothing could fix it anymore.
+            if (changes.changeCount > 0) {
+                revertAllChanges()
+            }
             return
         }
 

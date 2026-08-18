@@ -42,8 +42,9 @@ class CoinDetailViewModel @Inject constructor(
     val effect: SharedFlow<CoinDetailEffect> = _effect.asSharedFlow()
 
     /**
-     * True after the first keystroke. Until then the field follows the database, and an untouched
-     * field is never marked as wrong. The screen never draws it, so it stays out of the state.
+     * True after the first keystroke, or after a save that could not read the text. Until then the
+     * field follows the database, and an untouched field is never marked as wrong. The screen never
+     * draws it, so it stays out of the state.
      *
      * Only the main thread touches it, so a plain field is safe: `viewModelScope` runs on
      * `Dispatchers.Main.immediate`, and a flow collects on the thread of the collector. Do not
@@ -149,7 +150,15 @@ class CoinDetailViewModel @Inject constructor(
         val currentState = _state.value
         if (currentState.isSaving) return
 
-        val quantity = QuantityInput.normalize(currentState.quantityInput).toQuantity() ?: return
+        val quantity = QuantityInput.normalize(currentState.quantityInput).toQuantity()
+        if (quantity == null) {
+            // Only a stale state gets here: the number rules follow the locale, which can change
+            // while the screen is open. The edited flag lets derived() fill quantityError, so the
+            // field explains the problem instead of the button doing nothing.
+            isQuantityEdited = true
+            updateState { it }
+            return
+        }
 
         updateState { it.copy(isSaving = true) }
         viewModelScope.launch {
