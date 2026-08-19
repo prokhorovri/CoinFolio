@@ -79,4 +79,7 @@ dependencies {
 
     // Room
     implementation(libs.androidx.room.runtime)
+
+    // Logging
+    implementation(libs.timber)
 }

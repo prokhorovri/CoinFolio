@@ -36,4 +36,7 @@ dependencies {
 
     // DI (constructor injection only; Hilt modules live in :app)
     implementation(libs.javax.inject)
+
+    // Logging
+    implementation(libs.timber)
 }

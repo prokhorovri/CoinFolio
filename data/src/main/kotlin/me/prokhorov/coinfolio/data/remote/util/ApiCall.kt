@@ -2,11 +2,14 @@ package me.prokhorov.coinfolio.data.remote.util
 
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import me.prokhorov.coinfolio.data.util.logFailure
 import me.prokhorov.coinfolio.domain.result.AppError
 import me.prokhorov.coinfolio.domain.result.Resource
 import retrofit2.HttpException
 import java.io.IOException
 import java.net.HttpURLConnection
+
+private const val TAG = "ApiCall"
 
 /** `HttpURLConnection` is older than RFC 6585, so it has no constant for 429. */
 private const val HTTP_TOO_MANY_REQUESTS = 429
@@ -21,7 +24,9 @@ internal suspend fun <T> apiCall(block: suspend () -> T): Resource<T> {
         Resource.Success(block())
     } catch (e: Exception) {
         currentCoroutineContext().ensureActive()
-        Resource.Failure(e.toAppError())
+        val error = e.toAppError()
+        logFailure(tag = TAG, throwable = e, appError = error)
+        Resource.Failure(error)
     }
 }
 
