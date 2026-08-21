@@ -1,0 +1,37 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{kt,kts}]
+max_line_length = 100
+ktlint_code_style = android_studio
+
+# Trailing commas: cleaner diffs, and what Android Studio inserts by default.
+ij_kotlin_allow_trailing_comma = true
+ij_kotlin_allow_trailing_comma_on_call_site = true
+
+# Composables are PascalCase; test names are backticked.
+ktlint_function_naming_ignore_when_annotated_with = Composable, Test
+
+# Signature layout is a judgement call: a two-arg utility reads better on one line,
+# a composable reads better expanded. Formatted by hand, not by rule.
+ktlint_standard_function-signature = disabled
+
+# Same reasoning for the body: expression body suits a single call,
+# not a multi-line try/catch. Decided per function.
+ktlint_standard_function-expression-body = disabled
+
+# Tried enabling this with the multiline-threshold property to force DTOs and
+# single-arg constructors to stay expanded — it collapsed them instead. Disabled,
+# layout for class/data class constructors is decided by hand, same as function-signature.
+ktlint_standard_class-signature = disabled
+
+[*.md]
+# Two trailing spaces are a hard line break in Markdown.
+trim_trailing_whitespace = false
