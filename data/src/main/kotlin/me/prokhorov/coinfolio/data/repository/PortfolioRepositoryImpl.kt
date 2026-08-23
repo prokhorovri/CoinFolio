@@ -1,5 +1,6 @@
 package me.prokhorov.coinfolio.data.repository
 
+import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import me.prokhorov.coinfolio.data.local.HoldingLocalDataSource
@@ -11,7 +12,6 @@ import me.prokhorov.coinfolio.data.mapper.toEntity
 import me.prokhorov.coinfolio.domain.model.Holding
 import me.prokhorov.coinfolio.domain.repository.PortfolioRepository
 import me.prokhorov.coinfolio.domain.result.Resource
-import javax.inject.Inject
 
 class PortfolioRepositoryImpl @Inject constructor(
     private val holdingLocalDataSource: HoldingLocalDataSource,

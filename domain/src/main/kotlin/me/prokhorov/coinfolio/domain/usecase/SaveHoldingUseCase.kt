@@ -1,9 +1,9 @@
 package me.prokhorov.coinfolio.domain.usecase
 
+import javax.inject.Inject
 import me.prokhorov.coinfolio.domain.model.Holding
 import me.prokhorov.coinfolio.domain.repository.PortfolioRepository
 import me.prokhorov.coinfolio.domain.result.Resource
-import javax.inject.Inject
 
 /**
  * Stores the full quantity of a coin and replaces the previous value.

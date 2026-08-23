@@ -28,8 +28,8 @@ fun TopFadeOverlay() {
                         .0f to backgroundColor,
                         .4f to backgroundColor,
                         1f to backgroundColor.copy(alpha = 0f),
-                    )
-                )
-            )
+                    ),
+                ),
+            ),
     )
 }

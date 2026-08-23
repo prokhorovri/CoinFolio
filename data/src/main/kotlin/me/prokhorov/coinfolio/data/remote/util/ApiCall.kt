@@ -1,13 +1,13 @@
 package me.prokhorov.coinfolio.data.remote.util
 
+import java.io.IOException
+import java.net.HttpURLConnection
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import me.prokhorov.coinfolio.data.util.logFailure
 import me.prokhorov.coinfolio.domain.result.AppError
 import me.prokhorov.coinfolio.domain.result.Resource
 import retrofit2.HttpException
-import java.io.IOException
-import java.net.HttpURLConnection
 
 private const val TAG = "ApiCall"
 

@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.math.BigDecimal
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -22,8 +24,6 @@ import me.prokhorov.coinfolio.navigation.ScreenRoute
 import me.prokhorov.coinfolio.util.LengthProblem
 import me.prokhorov.coinfolio.util.QuantityInput
 import me.prokhorov.coinfolio.util.QuantityInputResult
-import java.math.BigDecimal
-import javax.inject.Inject
 
 @HiltViewModel
 class CoinDetailViewModel @Inject constructor(
@@ -214,7 +214,9 @@ private fun QuantityInputResult.toQuantity(): BigDecimal? {
 private fun QuantityInputResult.toQuantityError(): QuantityError? {
     return when (this) {
         is QuantityInputResult.Valid -> null
+
         is QuantityInputResult.InvalidCharacter -> QuantityError.INVALID_CHARACTER
+
         is QuantityInputResult.TooLong -> when (problem) {
             LengthProblem.INTEGER_DIGITS -> QuantityError.TOO_MANY_INTEGER_DIGITS
             LengthProblem.FRACTION_DIGITS -> QuantityError.TOO_MANY_FRACTION_DIGITS

@@ -1,8 +1,8 @@
 package me.prokhorov.coinfolio.screen.coindetail
 
+import java.math.BigDecimal
 import me.prokhorov.coinfolio.domain.model.CoinDetail
 import me.prokhorov.coinfolio.domain.result.AppError
-import java.math.BigDecimal
 
 data class CoinDetailUiState(
     val coinId: String,

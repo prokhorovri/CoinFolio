@@ -1,10 +1,10 @@
 package me.prokhorov.coinfolio.domain.usecase
 
+import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import me.prokhorov.coinfolio.domain.model.Holding
 import me.prokhorov.coinfolio.domain.repository.PortfolioRepository
 import me.prokhorov.coinfolio.domain.result.Resource
-import javax.inject.Inject
 
 class GetHoldingUseCase @Inject constructor(
     private val repository: PortfolioRepository,

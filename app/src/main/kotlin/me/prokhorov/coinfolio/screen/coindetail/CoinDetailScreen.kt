@@ -54,6 +54,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import coil3.compose.AsyncImage
+import java.math.BigDecimal
 import kotlinx.coroutines.flow.drop
 import me.prokhorov.coinfolio.R
 import me.prokhorov.coinfolio.domain.model.CoinDetail
@@ -72,7 +73,6 @@ import me.prokhorov.coinfolio.util.formatAsCompactUsd
 import me.prokhorov.coinfolio.util.formatAsPercent
 import me.prokhorov.coinfolio.util.formatAsUsd
 import me.prokhorov.coinfolio.util.isGain
-import java.math.BigDecimal
 
 @Composable
 fun CoinDetailScreen(
@@ -85,7 +85,7 @@ fun CoinDetailScreen(
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val savedMessage by rememberUpdatedState(
-        stringResource(R.string.coin_detail_screen_saved_text)
+        stringResource(R.string.coin_detail_screen_saved_text),
     )
 
     LaunchedEffect(key1 = lifecycleOwner) {
@@ -158,6 +158,7 @@ private fun CoinDetailContent(
             }
 
             state.coin == null -> LoadingState(contentPadding = innerPadding)
+
             else -> {
                 CoinDetailBody(
                     coin = state.coin,
@@ -354,6 +355,7 @@ private fun HoldingSection(
 
     val quantityErrorMessage = when (quantityError) {
         null -> null
+
         QuantityError.INVALID_CHARACTER -> {
             stringResource(R.string.coin_detail_screen_quantity_invalid_text)
         }

@@ -1,9 +1,9 @@
 package me.prokhorov.coinfolio.data.local
 
+import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import me.prokhorov.coinfolio.data.local.dao.HoldingDao
 import me.prokhorov.coinfolio.data.local.entity.HoldingEntity
-import javax.inject.Inject
 
 class HoldingLocalDataSource @Inject constructor(
     private val dao: HoldingDao,

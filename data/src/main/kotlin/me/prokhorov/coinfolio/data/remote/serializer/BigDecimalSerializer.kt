@@ -1,5 +1,6 @@
 package me.prokhorov.coinfolio.data.remote.serializer
 
+import java.math.BigDecimal
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -10,7 +11,6 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.JsonPrimitive
-import java.math.BigDecimal
 
 /**
  * Reads and writes a price as a JSON number and keeps every digit. A `Double` would lose digits,

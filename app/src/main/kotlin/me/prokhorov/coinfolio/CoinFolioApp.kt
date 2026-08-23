@@ -13,5 +13,4 @@ class CoinFolioApp : Application() {
             Timber.plant(Timber.DebugTree())
         }
     }
-
 }

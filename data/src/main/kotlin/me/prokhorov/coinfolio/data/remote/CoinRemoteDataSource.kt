@@ -1,9 +1,9 @@
 package me.prokhorov.coinfolio.data.remote
 
+import javax.inject.Inject
 import me.prokhorov.coinfolio.data.remote.api.CoinApi
 import me.prokhorov.coinfolio.data.remote.dto.CoinDetailDto
 import me.prokhorov.coinfolio.data.remote.dto.CoinDto
-import javax.inject.Inject
 
 class CoinRemoteDataSource @Inject constructor(
     private val api: CoinApi,

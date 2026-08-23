@@ -1,9 +1,9 @@
 package me.prokhorov.coinfolio.data.remote.dto
 
+import java.math.BigDecimal
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import me.prokhorov.coinfolio.data.remote.serializer.BigDecimalSerializer
-import java.math.BigDecimal
 
 @Serializable
 data class CoinDetailDto(

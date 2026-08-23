@@ -30,4 +30,3 @@ internal val LocalExtendedColors = staticCompositionLocalOf<ExtendedColors> {
 val MaterialTheme.extendedColors: ExtendedColors
     @Composable
     get() = LocalExtendedColors.current
-

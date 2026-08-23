@@ -37,6 +37,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import coil3.compose.AsyncImage
+import java.math.BigDecimal
 import me.prokhorov.coinfolio.R
 import me.prokhorov.coinfolio.domain.model.Coin
 import me.prokhorov.coinfolio.theme.CoinFolioTheme
@@ -49,7 +50,6 @@ import me.prokhorov.coinfolio.util.asMessage
 import me.prokhorov.coinfolio.util.formatAsPercent
 import me.prokhorov.coinfolio.util.formatAsUsd
 import me.prokhorov.coinfolio.util.isGain
-import java.math.BigDecimal
 
 @Composable
 fun CoinListScreen(
@@ -94,6 +94,7 @@ private fun CoinListContent(
     ) { innerPadding ->
         when {
             state.isLoading && state.coins.isEmpty() -> LoadingState(contentPadding = innerPadding)
+
             state.coins.isEmpty() && state.error != null -> {
                 ErrorState(
                     message = state.error.asMessage(),
@@ -103,6 +104,7 @@ private fun CoinListContent(
             }
 
             state.coins.isEmpty() -> EmptyState(contentPadding = innerPadding)
+
             else -> {
                 CoinList(
                     coins = state.coins,

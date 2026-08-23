@@ -46,9 +46,11 @@ object QuantityInput {
                     }
 
                     character == groupingSeparator -> Unit
+
                     // Kotlin's isWhitespace also covers the no break spaces that Russian and
                     // French use between groups of digits.
                     character.isWhitespace() -> Unit
+
                     else -> {
                         return QuantityInputResult.InvalidCharacter
                     }
