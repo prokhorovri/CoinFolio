@@ -1,0 +1,108 @@
+# detekt overrides for CoinFolio.
+#
+# The root build sets `buildUponDefaultConfig = true`, so this file only has the settings that
+# are different from detekt's defaults.
+#
+# `detektGenerateConfig` writes a full config file with 800+ lines instead. That file repeats
+# every default value, so the real choices get lost among them, and it goes out of date every
+# time detekt is updated.
+#
+# Every setting below is a choice, not a copy of a default.
+
+build:
+  # Any finding fails the build. Same gate as Spotless.
+  maxIssues: 0
+
+complexity:
+  LongParameterList:
+    # A composable gets its whole state through parameters. That is what state hoisting means.
+    # CoinDetailBody and HoldingSection are stateless on purpose, so a long parameter list is
+    # the cost of that. Moving the parameters into a data class only to lower the count would
+    # make these composables harder to read.
+    ignoreAnnotated:
+      - 'Composable'
+
+    # A parameter with a default value does not have to be passed. Kotlin also has named
+    # arguments, so two parameters of the same type cannot be swapped by mistake.
+    # `CoinApi.getCoinDetail` declares seven parameters, but six are @Query flags with
+    # defaults, so a call passes one. Required parameters are still counted.
+    ignoreDefaultParameters: true
+
+  TooManyFunctions:
+    # A screen file holds many small composables, one for each part of the screen. Counting
+    # them tells how well the screen is split, not how much work the file does. The limit
+    # still applies to classes, interfaces, objects and enums.
+    ignoreAnnotatedFunctions:
+      - 'Composable'
+
+naming:
+  FunctionNaming:
+    # Composables are PascalCase by convention. Test names are backticked sentences, and the
+    # default `excludes` for this rule already covers `**/test/**`.
+    ignoreAnnotated:
+      - 'Composable'
+
+style:
+  # The four rules below are already enforced by ktlint through Spotless, driven by
+  # .editorconfig. Leaving them on in detekt would report every violation twice and let the two
+  # tools disagree about the limit. Formatting belongs to Spotless; detekt keeps the rest.
+  MaxLineLength:
+    active: false
+  ModifierOrder:
+    active: false
+  NewLineAtEndOfFile:
+    active: false
+  WildcardImport:
+    active: false
+
+  ForbiddenComment:
+    # Detekt's default list has three markers. The one for work that is planned but not done
+    # yet is dropped on purpose, because that kind of note is fine to ship. The two kept
+    # below mean something is broken or must not go into a release, so they still fail the
+    # build. They are written out again, because this list replaces the default one instead
+    # of adding to it.
+    comments:
+      - reason: 'Forbidden FIXME marker in comment, please fix the problem.'
+        value: 'FIXME:'
+      - reason: 'Forbidden STOPSHIP marker in comment, please address it before shipping.'
+        value: 'STOPSHIP:'
+
+  MagicNumber:
+    # theme/ holds the design tokens, so a number there is what the file is for, not a value
+    # hidden in the middle of some logic. The other paths are the detekt default. They are
+    # written out again, because this list replaces the default one instead of adding to it.
+    excludes:
+      - '**/test/**'
+      - '**/androidTest/**'
+      - '**/commonTest/**'
+      - '**/jvmTest/**'
+      - '**/androidUnitTest/**'
+      - '**/androidInstrumentedTest/**'
+      - '**/jsTest/**'
+      - '**/iosTest/**'
+      - '**/*.kts'
+      - '**/theme/**'
+
+  ReturnCount:
+    # 3 instead of 2. `QuantityInput.normalize` returns as soon as it reads a character that
+    # can never be part of a number. A flag that the loop sets, checked at the end, would be
+    # harder to read. No other function in the project returns more than twice, and four
+    # returns still fail.
+    max: 3
+    # A guard clause at the top of a function checks a bad case and returns early. It keeps
+    # the rest of the function flat, so it should not count.
+    excludeGuardClauses: true
+
+  UnusedPrivateMember:
+    # A @Preview function has no caller in the code: Android Studio renders it. So "unused" is
+    # always wrong here.
+    ignoreAnnotated:
+      - 'Preview'
+
+Compose:
+  CompositionLocalAllowlist:
+    # CompositionLocal can hide dependencies from a composable's parameters,
+    # so the rule requires an explicit allowlist.
+    # This one is used only for theme colors that Material 3 does not provide.
+    allowedCompositionLocals:
+      - 'LocalExtendedColors'

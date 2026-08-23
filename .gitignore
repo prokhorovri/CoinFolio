@@ -16,7 +16,6 @@ captures/
 # OS
 .DS_Store
 
-
 # Packaged artifacts
 *.apk
 *.aab

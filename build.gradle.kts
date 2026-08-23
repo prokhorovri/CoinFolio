@@ -6,6 +6,20 @@ plugins {
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.hilt.android) apply false
     alias(libs.plugins.spotless)
+    alias(libs.plugins.detekt)
+}
+
+dependencies {
+    detektPlugins(libs.detekt.compose.rules)
+}
+
+// Same single-place setup as Spotless below: one plugin on the root project, reaching every
+// module through source paths instead of being applied per module.
+detekt {
+    source.setFrom(files("app/src", "data/src", "domain/src"))
+    config.setFrom(files("config/detekt/detekt.yml"))
+    buildUponDefaultConfig = true
+    parallel = true
 }
 
 // Formatting is configured once here and reaches every module through file globs.
