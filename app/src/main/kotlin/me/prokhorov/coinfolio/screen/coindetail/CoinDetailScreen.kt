@@ -34,6 +34,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -353,28 +354,13 @@ private fun HoldingSection(
     val focusManager = LocalFocusManager.current
     val quantityState = rememberTextFieldState()
 
-    val quantityErrorMessage = when (quantityError) {
-        null -> null
-
-        QuantityError.INVALID_CHARACTER -> {
-            stringResource(R.string.coin_detail_screen_quantity_invalid_text)
-        }
-
-        QuantityError.TOO_MANY_INTEGER_DIGITS -> {
-            stringResource(R.string.coin_detail_screen_quantity_too_large_text)
-        }
-
-        QuantityError.TOO_MANY_FRACTION_DIGITS -> {
-            stringResource(
-                R.string.coin_detail_screen_quantity_decimals_text,
-                QuantityInput.MAX_FRACTION_DIGITS,
-            )
-        }
-    }
+    val quantityErrorMessage = quantityError?.asMessage()
     val currentInput by rememberUpdatedState(quantityInput)
+    val currentOnQuantityChange by rememberUpdatedState(onQuantityChange)
 
     // The field keeps its own text, so the cursor stays in place, and this effect sends it up.
-    // It runs once, because quantityState never changes, so only currentInput stays fresh.
+    // It runs once, because quantityState never changes, so the two current* values above
+    // are what stays fresh.
     // Text the ViewModel already knows is skipped: it would mark the field as edited.
     LaunchedEffect(quantityState) {
         snapshotFlow { quantityState.text.toString() }
@@ -383,7 +369,7 @@ private fun HoldingSection(
             .drop(1)
             .collect { text ->
                 if (text != currentInput) {
-                    onQuantityChange(text)
+                    currentOnQuantityChange(text)
                 }
             }
     }
@@ -435,6 +421,31 @@ private fun HoldingSection(
         )
         Button(onClick = onSaveClick, enabled = canSave) {
             Text(text = stringResource(R.string.coin_detail_screen_save_text))
+        }
+    }
+}
+
+/**
+ * Same idea as [AppError.asMessage]: the state says which rule the input broke, and presentation
+ * turns that into text.
+ */
+@Composable
+@ReadOnlyComposable
+private fun QuantityError.asMessage(): String {
+    return when (this) {
+        QuantityError.INVALID_CHARACTER -> {
+            stringResource(R.string.coin_detail_screen_quantity_invalid_text)
+        }
+
+        QuantityError.TOO_MANY_INTEGER_DIGITS -> {
+            stringResource(R.string.coin_detail_screen_quantity_too_large_text)
+        }
+
+        QuantityError.TOO_MANY_FRACTION_DIGITS -> {
+            stringResource(
+                R.string.coin_detail_screen_quantity_decimals_text,
+                QuantityInput.MAX_FRACTION_DIGITS,
+            )
         }
     }
 }

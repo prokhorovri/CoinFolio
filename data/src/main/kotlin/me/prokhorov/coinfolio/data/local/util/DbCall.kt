@@ -17,6 +17,7 @@ private const val TAG = "DbCall"
  * [asResource] does the same for reads. `ensureActive()` skips cancellation, which happens when
  * the user leaves the screen during a write. That is not a failure.
  */
+@Suppress("TooGenericExceptionCaught")
 internal suspend fun <T> dbCall(block: suspend () -> T): Resource<T> {
     return try {
         Resource.Success(block())

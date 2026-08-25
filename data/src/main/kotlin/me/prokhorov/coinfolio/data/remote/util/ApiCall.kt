@@ -19,6 +19,7 @@ private const val HTTP_TOO_MANY_REQUESTS = 429
  * `ensureActive()` skips cancellation. Without it, leaving a screen during a request would show
  * an error.
  */
+@Suppress("TooGenericExceptionCaught")
 internal suspend fun <T> apiCall(block: suspend () -> T): Resource<T> {
     return try {
         Resource.Success(block())

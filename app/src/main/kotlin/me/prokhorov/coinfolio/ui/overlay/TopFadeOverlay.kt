@@ -13,20 +13,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import me.prokhorov.coinfolio.theme.TopFadeExtraHeight
 
+/** The gradient stays solid down to this part of the height, then it fades out. */
+private const val TOP_FADE_SOLID_STOP = .4f
+
 @Composable
-fun TopFadeOverlay() {
+fun TopFadeOverlay(modifier: Modifier = Modifier) {
     val topInset = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding()
     val backgroundColor = MaterialTheme.colorScheme.background
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(topInset + TopFadeExtraHeight)
             .background(
                 brush = Brush.verticalGradient(
                     colorStops = arrayOf(
                         .0f to backgroundColor,
-                        .4f to backgroundColor,
+                        TOP_FADE_SOLID_STOP to backgroundColor,
                         1f to backgroundColor.copy(alpha = 0f),
                     ),
                 ),

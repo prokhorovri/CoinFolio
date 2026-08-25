@@ -15,11 +15,11 @@ import me.prokhorov.coinfolio.domain.result.AppError
 @Composable
 @ReadOnlyComposable
 fun AppError.asMessage(): String {
-    val args = messageArgs
-    return if (args.isEmpty()) {
-        stringResource(messageRes)
-    } else {
-        stringResource(messageRes, *args)
+    // Only Server puts a number into its text. The other errors call it with no arguments, so
+    // their text is not formatted and a `%` sign in it is safe.
+    return when (this) {
+        is AppError.Server -> stringResource(messageRes, code)
+        else -> stringResource(messageRes)
     }
 }
 
@@ -28,11 +28,9 @@ fun AppError.asMessage(): String {
  * `stringResource` cannot be used there.
  */
 fun AppError.asMessage(context: Context): String {
-    val args = messageArgs
-    return if (args.isEmpty()) {
-        context.getString(messageRes)
-    } else {
-        context.getString(messageRes, *args)
+    return when (this) {
+        is AppError.Server -> context.getString(messageRes, code)
+        else -> context.getString(messageRes)
     }
 }
 
@@ -48,10 +46,3 @@ private val AppError.messageRes: Int
             AppError.Unexpected -> R.string.unexpected_error_text
         }
     }
-
-/**
- * Only `Server` has a format argument. When this is empty, both functions above skip
- * `String.format`. A string with no placeholders can then contain a `%` without an error.
- */
-private val AppError.messageArgs: Array<Any>
-    get() = if (this is AppError.Server) arrayOf(code) else emptyArray()
