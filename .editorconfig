@@ -19,6 +19,10 @@ ktlint_code_style = android_studio
 ij_kotlin_allow_trailing_comma = true
 ij_kotlin_allow_trailing_comma_on_call_site = true
 
+# One alphabetical list, no separate group for java, javax or kotlin. This is what ktlint
+# expects. Without this line the IDE moves java imports to the bottom and Spotless fails.
+ij_kotlin_imports_layout = *
+
 # Composables are PascalCase; test names are backticked.
 ktlint_function_naming_ignore_when_annotated_with = Composable, Test
 
