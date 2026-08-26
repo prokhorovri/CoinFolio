@@ -94,6 +94,11 @@ timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "tim
 # Code quality
 detekt-compose-rules = { group = "io.nlopez.compose.rules", name = "detekt", version.ref = "composeRules" }
 
+# Build tooling
+# Not an app dependency. The convention plugins in build-logic use the Android Gradle DSL,
+# so they need this plugin to compile.
+android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
+
 
 [plugins]
 # Build tooling

@@ -1,6 +1,9 @@
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
+    // Shared Gradle setup lives here as convention plugins. See build-logic/convention.
+    includeBuild("build-logic")
+
     repositories {
         google()
         mavenCentral()

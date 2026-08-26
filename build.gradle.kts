@@ -16,7 +16,9 @@ dependencies {
 // Same single-place setup as Spotless below: one plugin on the root project, reaching every
 // module through source paths instead of being applied per module.
 detekt {
-    source.setFrom(files("app/src", "data/src", "domain/src"))
+    // build-logic is a separate Gradle build, so its own detekt task does not run from here.
+    // Adding its sources checks the convention plugins with the same rules as the app code.
+    source.setFrom(files("app/src", "data/src", "domain/src", "build-logic/convention/src"))
     config.setFrom(files("config/detekt/detekt.yml"))
     buildUponDefaultConfig = true
     parallel = true

@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt.android)
+    id("coinfolio.android.lint")
 }
 
 android {
@@ -36,6 +37,13 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+
+    // The shared Lint setup lives in the coinfolio.android.lint convention plugin.
+    // Only one exception here that applies to this module.
+    lint {
+        // The launcher icon comes later. Drop this line when it lands.
+        disable += "MissingApplicationIcon"
     }
 }
 
