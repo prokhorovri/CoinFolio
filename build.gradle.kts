@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.hilt.android) apply false
     alias(libs.plugins.spotless)
     alias(libs.plugins.detekt)
+    alias(libs.plugins.dependency.analysis)
 }
 
 dependencies {
@@ -46,5 +47,62 @@ spotless {
         target("**/*.kts")
         targetExclude("**/build/**")
         ktlint(ktlintVersion)
+    }
+}
+
+// Checks the dependencies of every module. It finds three things: a dependency we declare but
+// never use, a library we use but never declare, and the wrong choice between implementation and
+// api. Run `./gradlew buildHealth`.
+dependencyAnalysis {
+    abi {
+        exclusions {
+            // A module needs `api` only for types that other modules can see. These two lines say
+            // what does not count as visible: classes marked `internal`, and classes that Hilt and
+            // Room generate for us.
+            ignoreGeneratedCode()
+            ignoreInternalPackages()
+        }
+    }
+
+    issues {
+        all {
+            // Any problem breaks the build. The default is only a warning.
+            onAny { severity("fail") }
+
+            // One kind of problem: our code uses a library that we never declared. A smaller block
+            // replaces the severity above, so it is set again here.
+            onUsedTransitiveDependencies {
+                severity("fail")
+
+                // We never wrote code that uses these two. Only the classes that Room and Hilt
+                // generate touch them. Declaring them would describe the code generator, not
+                // this app.
+                exclude(
+                    "androidx.fragment:fragment",
+                    "androidx.sqlite:sqlite",
+                )
+            }
+        }
+    }
+
+    structure {
+        // A bundle says: for us these artifacts are one library. Example: we declare
+        // navigation-compose, and our code uses NavController, which lives in navigation-runtime.
+        // Without the bundle the plugin asks us to declare navigation-runtime too.
+        // Each bundle below is one group with one version, so its parts always move together.
+        // Compose needs a pattern, because it is split over several groups.
+        bundle("compose") { include("^androidx\\.compose.*") }
+        bundle("activity") { includeGroup("androidx.activity") }
+        bundle("lifecycle") { includeGroup("androidx.lifecycle") }
+        bundle("navigation") { includeGroup("androidx.navigation") }
+        bundle("room") { includeGroup("androidx.room") }
+        bundle("dagger") { includeGroup("com.google.dagger") }
+
+        // The group org.jetbrains.kotlinx also holds coroutines, which are a different library.
+        // So here we name the two artifacts instead of the group.
+        bundle("serialization") {
+            includeDependency("org.jetbrains.kotlinx:kotlinx-serialization-json")
+            includeDependency("org.jetbrains.kotlinx:kotlinx-serialization-core")
+        }
     }
 }

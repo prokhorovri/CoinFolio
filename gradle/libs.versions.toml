@@ -46,6 +46,7 @@ ktlint = "1.8.0"
 # upgrading both together: dev.detekt plus compose-rules 0.6.x.
 detekt = "1.23.8"
 composeRules = "0.4.28"
+dependencyAnalysis = "3.19.1"
 
 
 [libraries]
@@ -115,3 +116,4 @@ hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 # Code quality
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+dependency-analysis = { id = "com.autonomousapps.dependency-analysis", version.ref = "dependencyAnalysis" }
