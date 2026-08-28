@@ -22,22 +22,25 @@ android {
 }
 
 dependencies {
-    implementation(projects.domain)
+    // Most lines here are `api`, not `implementation`. The Hilt modules live in :app and build
+    // CoinApi, CoinFolioDatabase and CoinRepositoryImpl. So these classes are public, and :app
+    // also sees the types they use in constructors and return values.
+    api(projects.domain)
 
     // Coroutines
-    implementation(libs.kotlinx.coroutines.core)
+    api(libs.kotlinx.coroutines.core)
 
     // Network
-    implementation(libs.retrofit.core)
-    implementation(libs.kotlinx.serialization.json)
+    api(libs.retrofit.core)
+    api(libs.okhttp.core)
+    api(libs.kotlinx.serialization.json)
 
     // Room
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
+    api(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)
 
     // DI (constructor injection only; Hilt modules live in :app)
-    implementation(libs.javax.inject)
+    api(libs.javax.inject)
 
     // Logging
     implementation(libs.timber)

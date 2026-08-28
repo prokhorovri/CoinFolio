@@ -55,6 +55,9 @@ dependencies {
     @Suppress("AvoidDuplicateDependencies")
     implementation(projects.data)
 
+    // AndroidX
+    implementation(libs.androidx.annotation)
+
     // Coroutines
     implementation(libs.kotlinx.coroutines.core)
 
@@ -74,9 +77,12 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
 
+    // DI
+    implementation(libs.javax.inject)
+
     // Hilt
     implementation(libs.hilt.android)
-    implementation(libs.hilt.navigation.compose)
+    implementation(libs.hilt.lifecycle.viewmodel.compose)
     ksp(libs.hilt.compiler)
 
     // Network
