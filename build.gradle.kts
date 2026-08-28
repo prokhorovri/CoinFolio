@@ -77,6 +77,10 @@ dependencyAnalysis {
                 // We never wrote code that uses these two. Only the classes that Room and Hilt
                 // generate touch them. Declaring them would describe the code generator, not
                 // this app.
+                // ignoreGeneratedCode() above does not cover this. It only filters ABI analysis,
+                // so it can move a dependency from api to implementation, never from used to
+                // unused. "Used transitive" is decided by a raw bytecode scan that reads the
+                // generated classes too, so the exclusion has to happen here.
                 exclude(
                     "androidx.fragment:fragment",
                     "androidx.sqlite:sqlite",
@@ -106,3 +110,7 @@ dependencyAnalysis {
         }
     }
 }
+
+// buildHealth is not part of `check` by default, so wire it in. Now `./gradlew check` runs
+// Spotless, detekt, Android Lint, the unit tests and the dependency analysis together.
+tasks.named("check") { dependsOn(tasks.named("buildHealth")) }
