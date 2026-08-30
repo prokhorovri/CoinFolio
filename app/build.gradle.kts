@@ -97,4 +97,8 @@ dependencies {
 
     // Logging
     implementation(libs.timber)
+
+    // Testing
+    testImplementation(libs.junit)
+    testImplementation(libs.truth)
 }
