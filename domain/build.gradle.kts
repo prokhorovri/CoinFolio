@@ -10,4 +10,9 @@ dependencies {
     // DI (constructor injection only; Hilt modules live in :app). `api` because `@Inject` is
     // written on public constructors, and Hilt in :app reads it.
     api(libs.javax.inject)
+
+    // Testing. Pure JVM.
+    testImplementation(libs.junit)
+    testImplementation(libs.truth)
+    testImplementation(libs.kotlinx.coroutines.test)
 }
