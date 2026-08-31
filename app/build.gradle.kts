@@ -40,6 +40,14 @@ android {
         buildConfig = true
     }
 
+    testOptions {
+        unitTests {
+            // Robolectric reads the merged manifest and resources of the module. Without this
+            // it cannot start, and the test fails before the first line of the test body.
+            isIncludeAndroidResources = true
+        }
+    }
+
     // The shared Lint setup lives in the coinfolio.android.lint convention plugin.
     // Only one exception here that applies to this module.
     lint {
@@ -99,6 +107,12 @@ dependencies {
     implementation(libs.timber)
 
     // Testing
+    // The fakes and model builders come from :domain.
+    testImplementation(testFixtures(projects.domain))
     testImplementation(libs.junit)
     testImplementation(libs.truth)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
+    // CoinDetailViewModel reads its coin id with SavedStateHandle.toRoute, which builds a Bundle.
+    testImplementation(libs.robolectric)
 }

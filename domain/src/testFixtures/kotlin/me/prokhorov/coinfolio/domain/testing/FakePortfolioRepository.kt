@@ -2,6 +2,7 @@ package me.prokhorov.coinfolio.domain.testing
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import me.prokhorov.coinfolio.domain.model.Holding
@@ -12,6 +13,9 @@ import me.prokhorov.coinfolio.domain.result.Resource
 /**
  * Keeps the holdings in memory, so a test can save one and read it back the way the real
  * database does. Set [error] to make every call fail.
+ *
+ * A read failure ends the flow, like the real code in `:data` does with `catch`. So a caller
+ * that wants updates again has to subscribe again, and a test can check that it does.
  */
 class FakePortfolioRepository : PortfolioRepository {
 
@@ -20,21 +24,11 @@ class FakePortfolioRepository : PortfolioRepository {
     var error: AppError? = null
 
     override fun getHoldings(): Flow<Resource<List<Holding>>> {
-        return holdings.map { list ->
-            val failure = error
-            if (failure != null) Resource.Failure(failure) else Resource.Success(list)
-        }
+        return read { list -> list }
     }
 
     override fun getHolding(coinId: String): Flow<Resource<Holding?>> {
-        return holdings.map { list ->
-            val failure = error
-            if (failure == null) {
-                Resource.Success(list.firstOrNull { it.coinId == coinId })
-            } else {
-                Resource.Failure(failure)
-            }
-        }
+        return read { list -> list.firstOrNull { it.coinId == coinId } }
     }
 
     override suspend fun saveHolding(holding: Holding): Resource<Unit> {
@@ -52,4 +46,19 @@ class FakePortfolioRepository : PortfolioRepository {
         holdings.update { list -> list.filterNot { it.coinId == coinId } }
         return Resource.Success(Unit)
     }
+
+    private fun <T> read(select: (List<Holding>) -> T): Flow<Resource<T>> {
+        return holdings
+            .map<List<Holding>, Resource<T>> { list ->
+                error?.let { throw ReadFailure(it) }
+                Resource.Success(select(list))
+            }
+            .catch { throwable ->
+                if (throwable !is ReadFailure) throw throwable
+                emit(Resource.Failure(throwable.error))
+            }
+    }
 }
+
+/** Carries the error through the flow, so `catch` can end it the way Room does. */
+private class ReadFailure(val error: AppError) : Exception()
