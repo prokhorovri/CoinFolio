@@ -71,8 +71,10 @@ style:
     # theme/ holds the design tokens, so a number there is what the file is for, not a value
     # hidden in the middle of some logic. The other paths are the detekt default. They are
     # written out again, because this list replaces the default one instead of adding to it.
+    # testFixtures is not in the detekt default, but it holds test code like the rest.
     excludes:
       - '**/test/**'
+      - '**/testFixtures/**'
       - '**/androidTest/**'
       - '**/commonTest/**'
       - '**/jvmTest/**'
