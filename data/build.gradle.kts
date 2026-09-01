@@ -19,6 +19,12 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
@@ -46,6 +52,12 @@ dependencies {
     implementation(libs.timber)
 
     // Testing
+    testImplementation(testFixtures(projects.domain))
     testImplementation(libs.junit)
     testImplementation(libs.truth)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
+
+    // Room runs on a real SQLite here, so these tests need an Android runtime on the JVM.
+    testImplementation(libs.robolectric)
 }
