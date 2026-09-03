@@ -48,7 +48,7 @@ object NetworkModule {
         return Retrofit.Builder()
             .baseUrl(CoinApiConfig.BASE_URL)
             .client(okHttpClient)
-            .addConverterFactory(json.asConverterFactory(CoinApiConfig.CONTENT_TYPE))
+            .addConverterFactory(json.asConverterFactory(CoinApiConfig.JSON_MEDIA_TYPE))
             .build()
     }
 

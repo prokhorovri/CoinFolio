@@ -58,6 +58,11 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
 
+    // The API tests answer a real request, so they need the same JSON converter as :app.
+    testImplementation(libs.okhttp.mockwebserver)
+    testImplementation(libs.okhttp.mockwebserver.junit4)
+    testImplementation(libs.retrofit.converter.kotlinx.serialization)
+
     // Room runs on a real SQLite here, so these tests need an Android runtime on the JVM.
     testImplementation(libs.robolectric)
 }
