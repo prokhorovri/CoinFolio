@@ -6,7 +6,7 @@ import kotlinx.coroutines.test.runTest
 import me.prokhorov.coinfolio.domain.result.AppError
 import me.prokhorov.coinfolio.domain.result.Resource
 import me.prokhorov.coinfolio.domain.testing.FakeCoinRepository
-import me.prokhorov.coinfolio.domain.testing.coin
+import me.prokhorov.coinfolio.domain.testing.createCoin
 import me.prokhorov.coinfolio.domain.usecase.GetTopCoinsUseCase
 import me.prokhorov.coinfolio.testing.MainDispatcherRule
 import org.junit.Rule
@@ -25,7 +25,12 @@ class CoinListViewModelTest {
 
     @Test
     fun `loads the coins on start`() {
-        repository.topCoins = Resource.Success(listOf(coin("bitcoin"), coin("ethereum")))
+        repository.topCoins = Resource.Success(
+            listOf(
+                createCoin("bitcoin"),
+                createCoin("ethereum"),
+            ),
+        )
 
         val state = viewModel().state.value
 
@@ -61,7 +66,7 @@ class CoinListViewModelTest {
     // snackbar, and the state keeps the old list with no error.
     @Test
     fun `a failure with coins on screen goes to the effect`() = runTest {
-        repository.topCoins = Resource.Success(listOf(coin("bitcoin")))
+        repository.topCoins = Resource.Success(listOf(createCoin("bitcoin")))
         val viewModel = viewModel()
 
         viewModel.effect.test {
@@ -81,7 +86,7 @@ class CoinListViewModelTest {
         repository.topCoins = Resource.Failure(AppError.Network)
         val viewModel = viewModel()
 
-        repository.topCoins = Resource.Success(listOf(coin("bitcoin")))
+        repository.topCoins = Resource.Success(listOf(createCoin("bitcoin")))
         viewModel.onIntent(CoinListIntent.LoadCoins)
 
         val state = viewModel.state.value

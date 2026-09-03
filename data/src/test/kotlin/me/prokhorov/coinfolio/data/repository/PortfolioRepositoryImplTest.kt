@@ -10,7 +10,7 @@ import me.prokhorov.coinfolio.data.testing.InMemoryDatabaseRule
 import me.prokhorov.coinfolio.domain.model.Holding
 import me.prokhorov.coinfolio.domain.result.AppError
 import me.prokhorov.coinfolio.domain.result.Resource
-import me.prokhorov.coinfolio.domain.testing.holding
+import me.prokhorov.coinfolio.domain.testing.createHolding
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -34,7 +34,7 @@ class PortfolioRepositoryImplTest {
 
     @Test
     fun `a saved holding is read back as a domain holding`() = runTest {
-        val saveResult = repository.saveHolding(holding(COIN_ID, "0.5"))
+        val saveResult = repository.saveHolding(createHolding(COIN_ID, "0.5"))
 
         assertThat(saveResult).isEqualTo(Resource.Success(Unit))
         assertThat(repository.getHolding(COIN_ID).first()).isEqualTo(
@@ -51,9 +51,9 @@ class PortfolioRepositoryImplTest {
 
     @Test
     fun `saving the same coin again replaces the quantity`() = runTest {
-        repository.saveHolding(holding(COIN_ID, "0.5"))
+        repository.saveHolding(createHolding(COIN_ID, "0.5"))
 
-        repository.saveHolding(holding(COIN_ID, "1.5"))
+        repository.saveHolding(createHolding(COIN_ID, "1.5"))
 
         assertThat(repository.getHoldings().first()).isEqualTo(
             Resource.Success(listOf(Holding(COIN_ID, BigDecimal("1.5")))),
@@ -62,7 +62,7 @@ class PortfolioRepositoryImplTest {
 
     @Test
     fun `a deleted holding is gone`() = runTest {
-        repository.saveHolding(holding(COIN_ID, "0.5"))
+        repository.saveHolding(createHolding(COIN_ID, "0.5"))
 
         val deleteResult = repository.deleteHolding(COIN_ID)
 
@@ -77,7 +77,7 @@ class PortfolioRepositoryImplTest {
         repository.getHoldings().test {
             assertThat(awaitItem()).isEqualTo(Resource.Success(emptyList<Holding>()))
 
-            repository.saveHolding(holding(COIN_ID, "0.5"))
+            repository.saveHolding(createHolding(COIN_ID, "0.5"))
 
             assertThat(awaitItem()).isEqualTo(
                 Resource.Success(
@@ -102,7 +102,7 @@ class PortfolioRepositoryImplTest {
     fun `a write to a closed database becomes a failure`() = runTest {
         databaseRule.database.close()
 
-        assertThat(repository.saveHolding(holding(COIN_ID, "0.5"))).isEqualTo(
+        assertThat(repository.saveHolding(createHolding(COIN_ID, "0.5"))).isEqualTo(
             Resource.Failure(
                 AppError.Unexpected,
             ),

@@ -5,7 +5,7 @@ import kotlinx.coroutines.test.runTest
 import me.prokhorov.coinfolio.domain.result.AppError
 import me.prokhorov.coinfolio.domain.result.Resource
 import me.prokhorov.coinfolio.domain.testing.FakeCoinRepository
-import me.prokhorov.coinfolio.domain.testing.coin
+import me.prokhorov.coinfolio.domain.testing.createCoin
 import org.junit.Test
 
 class GetTopCoinsUseCaseTest {
@@ -15,7 +15,7 @@ class GetTopCoinsUseCaseTest {
 
     @Test
     fun `the coins of the repository are returned unchanged`() = runTest {
-        val coins = listOf(coin("bitcoin"), coin("ethereum"))
+        val coins = listOf(createCoin("bitcoin"), createCoin("ethereum"))
         repository.topCoins = Resource.Success(coins)
 
         val result = getTopCoins()

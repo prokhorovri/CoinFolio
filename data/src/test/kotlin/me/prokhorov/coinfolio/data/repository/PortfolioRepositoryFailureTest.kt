@@ -15,7 +15,7 @@ import me.prokhorov.coinfolio.data.local.dao.HoldingDao
 import me.prokhorov.coinfolio.data.local.entity.HoldingEntity
 import me.prokhorov.coinfolio.domain.result.AppError
 import me.prokhorov.coinfolio.domain.result.Resource
-import me.prokhorov.coinfolio.domain.testing.holding
+import me.prokhorov.coinfolio.domain.testing.createHolding
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -42,7 +42,7 @@ class PortfolioRepositoryFailureTest {
 
     @Test
     fun `a write that hits a storage error becomes a storage failure`() = runTest {
-        val result = createRepository(storageError).saveHolding(holding(COIN_ID, "0.5"))
+        val result = createRepository(storageError).saveHolding(createHolding(COIN_ID, "0.5"))
 
         assertThat(result).isEqualTo(Resource.Failure(AppError.Storage))
     }
@@ -71,7 +71,7 @@ class PortfolioRepositoryFailureTest {
     @Test
     fun `an unknown error becomes an unexpected failure`() = runTest {
         val result = createRepository { throw IllegalStateException("a bug on our side") }
-            .saveHolding(holding(COIN_ID, "0.5"))
+            .saveHolding(createHolding(COIN_ID, "0.5"))
 
         assertThat(result).isEqualTo(Resource.Failure(AppError.Unexpected))
     }
@@ -86,7 +86,7 @@ class PortfolioRepositoryFailureTest {
         }
 
         val thrown = runCatching {
-            coroutineScope { repository.saveHolding(holding(COIN_ID, "0.5")) }
+            coroutineScope { repository.saveHolding(createHolding(COIN_ID, "0.5")) }
         }.exceptionOrNull()
 
         assertThat(thrown).isInstanceOf(CancellationException::class.java)

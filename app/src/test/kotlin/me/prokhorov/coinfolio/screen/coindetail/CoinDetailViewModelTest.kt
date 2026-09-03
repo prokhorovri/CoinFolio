@@ -10,8 +10,8 @@ import me.prokhorov.coinfolio.domain.result.AppError
 import me.prokhorov.coinfolio.domain.result.Resource
 import me.prokhorov.coinfolio.domain.testing.FakeCoinRepository
 import me.prokhorov.coinfolio.domain.testing.FakePortfolioRepository
-import me.prokhorov.coinfolio.domain.testing.coinDetail
-import me.prokhorov.coinfolio.domain.testing.holding
+import me.prokhorov.coinfolio.domain.testing.createCoinDetail
+import me.prokhorov.coinfolio.domain.testing.createHolding
 import me.prokhorov.coinfolio.domain.usecase.GetCoinDetailUseCase
 import me.prokhorov.coinfolio.domain.usecase.GetHoldingUseCase
 import me.prokhorov.coinfolio.domain.usecase.SaveHoldingUseCase
@@ -52,7 +52,7 @@ class CoinDetailViewModelTest {
     }
 
     private fun coinIsAvailable() {
-        coinRepository.coinDetails = mapOf(COIN_ID to Resource.Success(coinDetail(COIN_ID)))
+        coinRepository.coinDetails = mapOf(COIN_ID to Resource.Success(createCoinDetail(COIN_ID)))
     }
 
     // Loading the coin
@@ -100,7 +100,7 @@ class CoinDetailViewModelTest {
     @Test
     fun `the stored holding fills the field`() = runTest {
         coinIsAvailable()
-        portfolioRepository.saveHolding(holding(COIN_ID, "2.5"))
+        portfolioRepository.saveHolding(createHolding(COIN_ID, "2.5"))
 
         val state = viewModel().state.value
 
@@ -126,7 +126,7 @@ class CoinDetailViewModelTest {
         val viewModel = viewModel()
 
         viewModel.onIntent(CoinDetailIntent.QuantityChanged("7"))
-        portfolioRepository.saveHolding(holding(COIN_ID, "2.5"))
+        portfolioRepository.saveHolding(createHolding(COIN_ID, "2.5"))
 
         val state = viewModel.state.value
         assertThat(state.quantityInput).isEqualTo("7")
@@ -213,7 +213,7 @@ class CoinDetailViewModelTest {
     @Test
     fun `saving zero clears the holding`() = runTest {
         coinIsAvailable()
-        portfolioRepository.saveHolding(holding(COIN_ID, "2.5"))
+        portfolioRepository.saveHolding(createHolding(COIN_ID, "2.5"))
         val viewModel = viewModel()
 
         viewModel.onIntent(CoinDetailIntent.QuantityChanged("0"))

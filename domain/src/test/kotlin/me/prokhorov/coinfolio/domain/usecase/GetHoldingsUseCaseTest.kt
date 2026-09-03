@@ -6,7 +6,7 @@ import kotlinx.coroutines.test.runTest
 import me.prokhorov.coinfolio.domain.result.AppError
 import me.prokhorov.coinfolio.domain.result.Resource
 import me.prokhorov.coinfolio.domain.testing.FakePortfolioRepository
-import me.prokhorov.coinfolio.domain.testing.holding
+import me.prokhorov.coinfolio.domain.testing.createHolding
 import org.junit.Test
 
 class GetHoldingsUseCaseTest {
@@ -23,14 +23,14 @@ class GetHoldingsUseCaseTest {
 
     @Test
     fun `every stored holding is emitted`() = runTest {
-        repository.saveHolding(holding("bitcoin", "0.5"))
-        repository.saveHolding(holding("ethereum", "2"))
+        repository.saveHolding(createHolding("bitcoin", "0.5"))
+        repository.saveHolding(createHolding("ethereum", "2"))
 
         val result = getHoldings().first()
 
         val expected = listOf(
-            holding("bitcoin", "0.5"),
-            holding("ethereum", "2"),
+            createHolding("bitcoin", "0.5"),
+            createHolding("ethereum", "2"),
         )
         assertThat(result).isEqualTo(Resource.Success(expected))
     }
