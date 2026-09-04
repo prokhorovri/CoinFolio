@@ -22,6 +22,8 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -45,6 +47,20 @@ android {
             // Robolectric reads the merged manifest and resources of the module. Without this
             // it cannot start, and the test fails before the first line of the test body.
             isIncludeAndroidResources = true
+        }
+
+        // Gradle starts this emulator, runs the tests, then closes it. No AVD needed on the
+        // machine, and CI uses the same device.
+        // Run: ./gradlew :app:pixel6Api34DebugAndroidTest
+        managedDevices {
+            localDevices {
+                create("pixel6Api34") {
+                    device = "Pixel 6"
+                    apiLevel = 34
+                    // ATD is a small image for tests: no browser, no Play Store. It boots faster.
+                    systemImageSource = "aosp-atd"
+                }
+            }
         }
     }
 
@@ -115,4 +131,16 @@ dependencies {
     testImplementation(libs.turbine)
     // CoinDetailViewModel reads its coin id with SavedStateHandle.toRoute, which builds a Bundle.
     testImplementation(libs.robolectric)
+
+    // UI tests build the ViewModel by hand, so they need the same fakes as the unit tests.
+    androidTestImplementation(testFixtures(projects.domain))
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.ui.test.junit4)
+    // The tests never use this class in code. Only testInstrumentationRunner names it.
+    androidTestRuntimeOnly(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.truth)
+    // Adds an empty activity to the debug app. A test shows one composable inside it.
+    debugImplementation(libs.androidx.ui.test.manifest)
 }
