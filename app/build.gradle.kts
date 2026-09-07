@@ -16,8 +16,8 @@ android {
     defaultConfig {
         applicationId = "me.prokhorov.coinfolio"
         // Android 8 (API 26 and 27) behaves differently in Compose text input: focus is not
-        // cleared, so the keyboard stays open after a save and no public API closes it.
-        // The screens are verified from API 28 upward, so that is the floor.
+        // cleared. The keyboard stays open after a save, and no public API closes it.
+        // The screens are verified from API 28 upward, so that is the lowest supported version.
         minSdk = 28
         targetSdk = 36
         versionCode = 1
@@ -45,7 +45,7 @@ android {
     testOptions {
         unitTests {
             // Robolectric reads the merged manifest and resources of the module. Without this
-            // it cannot start, and the test fails before the first line of the test body.
+            // it cannot start. The test then fails before the first line of the test body.
             isIncludeAndroidResources = true
         }
 
@@ -65,9 +65,9 @@ android {
     }
 
     // The shared Lint setup lives in the coinfolio.android.lint convention plugin.
-    // Only one exception here that applies to this module.
+    // This module has only one exception.
     lint {
-        // The launcher icon comes later. Drop this line when it lands.
+        // The launcher icon comes later. Drop this line when it is added.
         disable += "MissingApplicationIcon"
     }
 }

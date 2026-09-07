@@ -4,8 +4,8 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 
-    // An included build does not inherit the version catalog of the main build, so it is
-    // declared again here, pointing at the same file. One catalog, two builds.
+    // An included build does not inherit the version catalog of the main build. So it is
+    // declared again here, and it points at the same file.
     versionCatalogs {
         create("libs") {
             from(files("../gradle/libs.versions.toml"))

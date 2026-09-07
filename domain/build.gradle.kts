@@ -2,7 +2,7 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.dependency.analysis)
     // Publishes the fakes in src/testFixtures, so every module's tests use the same ones.
-    // It does not work with KMP: if :domain moves there, the fakes need a :domain-testing module.
+    // It does not work with KMP. If :domain moves there, the fakes need a :domain-testing module.
     `java-test-fixtures`
 }
 

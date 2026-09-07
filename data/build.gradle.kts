@@ -29,8 +29,8 @@ android {
 
 dependencies {
     // Most lines here are `api`, not `implementation`. The Hilt modules live in :app and build
-    // CoinApi, CoinFolioDatabase and CoinRepositoryImpl. So these classes are public, and :app
-    // also sees the types they use in constructors and return values.
+    // CoinApi, CoinFolioDatabase and CoinRepositoryImpl. So these classes are public. :app also
+    // sees the types they use in constructors and return values.
     api(projects.domain)
 
     // Coroutines
@@ -58,7 +58,7 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
 
-    // The API tests answer a real request, so they need the same JSON converter as :app.
+    // The API tests send a real request, so they need the same JSON converter as :app.
     testImplementation(libs.okhttp.mockwebserver)
     testImplementation(libs.okhttp.mockwebserver.junit4)
     testImplementation(libs.retrofit.converter.kotlinx.serialization)
