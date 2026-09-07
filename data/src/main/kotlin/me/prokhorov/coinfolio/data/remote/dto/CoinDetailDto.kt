@@ -44,9 +44,9 @@ data class CoinMarketDataDto(
 )
 
 /**
- * `coins/{id}` ignores `vs_currency` and returns every money field for all currencies, with the
- * currency code as the key. Only the one key we support is declared here, so the other ~60 are
- * not parsed.
+ * `coins/{id}` ignores `vs_currency`. It returns every money field for all currencies, with
+ * the currency code as the key. Only `usd` is declared here, so the other ~60 keys are not
+ * parsed.
  */
 @Serializable
 data class CurrencyAmountDto(

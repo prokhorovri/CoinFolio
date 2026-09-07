@@ -13,9 +13,11 @@ import me.prokhorov.coinfolio.domain.result.Resource
 private const val TAG = "DbCall"
 
 /**
- * Turns any failure of a Room write into a [Resource], so a ViewModel never gets an exception.
- * [asResource] does the same for reads. `ensureActive()` skips cancellation, which happens when
- * the user leaves the screen during a write. That is not a failure.
+ * Turns any failure of a Room write into a [Resource]. So a ViewModel never gets an
+ * exception. [asResource] does the same for reads.
+ *
+ * `ensureActive()` skips cancellation. It happens when the user leaves the screen during a
+ * write, and that is not a failure.
  */
 @Suppress("TooGenericExceptionCaught")
 internal suspend fun <T> dbCall(block: suspend () -> T): Resource<T> {
@@ -30,10 +32,9 @@ internal suspend fun <T> dbCall(block: suspend () -> T): Resource<T> {
 }
 
 /**
- * Wraps a Room query flow so a failure arrives as a value and does not stop the collecting
- * coroutine with an exception. There is no cancellation check here, unlike [dbCall], because
- * `catch` is documented to ignore exceptions that cancel the flow. The flow ends after a
- * failure, because Room does not emit again once its query is broken.
+ * Wraps a Room query flow, so a failure arrives as a value. There is no cancellation check
+ * here, unlike [dbCall]. `catch` is documented to ignore exceptions that cancel the flow.
+ * The flow ends after a failure. Room does not emit again once its query is broken.
  */
 internal fun <T> Flow<T>.asResource(): Flow<Resource<T>> {
     return map<T, Resource<T>> { Resource.Success(it) }

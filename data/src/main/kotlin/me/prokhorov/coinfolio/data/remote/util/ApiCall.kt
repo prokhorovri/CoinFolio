@@ -15,9 +15,9 @@ private const val TAG = "ApiCall"
 private const val HTTP_TOO_MANY_REQUESTS = 429
 
 /**
- * Turns any failure of a remote call into a [Resource], so a ViewModel never gets an exception.
- * `ensureActive()` skips cancellation. Without it, leaving a screen during a request would show
- * an error.
+ * Turns any failure of a remote call into a [Resource]. So a ViewModel never gets an
+ * exception. `ensureActive()` skips cancellation. Without it, leaving a screen during a
+ * request would show an error.
  */
 @Suppress("TooGenericExceptionCaught")
 internal suspend fun <T> apiCall(block: suspend () -> T): Resource<T> {
@@ -39,7 +39,7 @@ private fun Exception.toAppError(): AppError {
     }
 }
 
-/** 429 has its own case because failed calls also count, so a retry makes the limit worse. */
+/** 429 has its own case: failed calls also count. So a retry makes the limit worse. */
 private fun httpStatusError(code: Int): AppError {
     return when (code) {
         HttpURLConnection.HTTP_NOT_FOUND -> AppError.NotFound

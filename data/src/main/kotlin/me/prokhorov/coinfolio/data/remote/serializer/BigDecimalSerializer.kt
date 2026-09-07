@@ -15,15 +15,15 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.JsonUnquotedLiteral
 
 /**
- * Reads and writes a price as a JSON number and keeps every digit. A `Double` would lose digits,
- * and money must stay exact. A value that is not a number is rejected with
- * [SerializationException].
+ * Reads and writes a price as a JSON number and keeps every digit. A `Double` would lose
+ * digits, and money must stay exact. It throws [SerializationException] for a value that is
+ * not a number.
  */
 object BigDecimalSerializer : KSerializer<BigDecimal> {
     /**
-     * Tells the format what this type looks like. JSON does not use it here, because we read and
-     * write the JSON element ourselves. There is no kind for a big number, so this one is only a
-     * name.
+     * Tells the format what this type looks like. JSON does not use it here, because we read
+     * and write the JSON element ourselves. There is no kind for a big number. So this one is
+     * only a name.
      */
     override val descriptor: SerialDescriptor =
         PrimitiveSerialDescriptor("BigDecimal", PrimitiveKind.STRING)
@@ -41,13 +41,12 @@ object BigDecimalSerializer : KSerializer<BigDecimal> {
     /**
      * Writes the price as a JSON number without quotes.
      *
-     * We don't use [JsonPrimitive] here because it can convert the value to Double
-     * and change the number.
+     * We do not use [JsonPrimitive] here. It can convert the value to Double and change the
+     * number.
      *
-     * We use toString() to keep the scale of the value. toPlainString() would write 1E+3 as
-     * 1000, which is the same number with a different scale. It can write an exponent for a
-     * very small price, such as 5.6366E-11, and that is fine: CoinGecko sends numbers in the
-     * same form.
+     * toString() keeps the scale of the value. toPlainString() would write 1E+3 as 1000. That
+     * is the same number with a different scale. toString() can write an exponent for a very
+     * small price, such as 5.6366E-11. That is fine: CoinGecko sends numbers in the same form.
      */
     @OptIn(ExperimentalSerializationApi::class)
     override fun serialize(

@@ -17,7 +17,7 @@ interface HoldingDao {
     @Query("DELETE FROM holdings WHERE coinId = :coinId")
     suspend fun deleteHolding(coinId: String)
 
-    // Replaces any existing holding for the same coin; quantity is an absolute amount, not a delta.
+    // Replaces any existing holding for the same coin. The quantity is the new total, not a change.
     @Upsert
     suspend fun upsertHolding(holding: HoldingEntity)
 }

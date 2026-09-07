@@ -12,7 +12,7 @@ data class CoinDto(
     val name: String,
     @SerialName("image")
     val imageUrl: String,
-    // Both prices have defaults, so missing values won't break the whole list.
+    // Both prices have defaults, so a missing value does not break the whole list.
     @SerialName("current_price")
     @Serializable(with = BigDecimalSerializer::class)
     val currentPrice: BigDecimal? = null,

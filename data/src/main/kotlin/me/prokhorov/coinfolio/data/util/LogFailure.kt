@@ -4,11 +4,12 @@ import me.prokhorov.coinfolio.domain.result.AppError
 import timber.log.Timber
 
 /**
- * Logs a failure before it becomes a result value. This is the last point where the cause still
- * exists, because [AppError] does not carry it.
+ * Logs a failure before it becomes a result value. This is the last point where the cause
+ * still exists. [AppError] does not carry it.
  *
  * [AppError.Unexpected] means the cause was not recognised, so it is a bug: error level.
- * Everything else is a normal runtime condition, such as no network or a full disk: warning level.
+ * Everything else is a normal runtime condition, such as no network or a full disk. That is
+ * warning level.
  */
 internal fun logFailure(tag: String, throwable: Throwable, appError: AppError) {
     if (appError == AppError.Unexpected) {
