@@ -30,9 +30,9 @@ private const val ETHEREUM_ID = "ethereum"
 
 /**
  * Shows the real screen with a real ViewModel over [FakeCoinRepository]. No Hilt: the screen
- * takes the ViewModel as a parameter, so a test can pass its own.
+ * takes the ViewModel as a parameter. A test can pass its own.
  *
- * Method names use underscores. A space in a method name needs minSdk 30, and this app allows 28.
+ * Method names use underscores. A space in a method name needs minSdk 30. This app allows 28.
  */
 @RunWith(AndroidJUnit4::class)
 class CoinListScreenTest {

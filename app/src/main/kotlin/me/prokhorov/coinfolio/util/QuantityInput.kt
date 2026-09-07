@@ -3,8 +3,8 @@ package me.prokhorov.coinfolio.util
 import java.math.BigDecimal
 
 /**
- * The rules of the holding quantity field, in one place. The screen uses them to filter what the
- * user types, and the state uses them to check what it holds.
+ * The rules of the holding quantity field, in one place. The screen uses them to filter what
+ * the user types. The state uses them to check what it holds.
  *
  * The field shows the separator of the user's locale. Everything below the UI uses a dot:
  * [BigDecimal], the domain models and Room.
@@ -14,7 +14,7 @@ object QuantityInput {
     const val MAX_FRACTION_DIGITS = 18
 
     /**
-     * Removes the grouping separator of the locale and every space, and keeps digits with at most
+     * Removes the grouping separator of the locale and every space. Keeps digits with at most
      * one decimal separator.
      *
      * Only the separator of the user's locale is a decimal separator. Any other separator
@@ -47,8 +47,8 @@ object QuantityInput {
 
                     character == groupingSeparator -> Unit
 
-                    // Kotlin's isWhitespace also covers the no break spaces that Russian and
-                    // French use between groups of digits.
+                    // Kotlin's isWhitespace also covers the no break spaces. Russian and
+                    // French use them between groups of digits.
                     character.isWhitespace() -> Unit
 
                     else -> {
@@ -88,8 +88,8 @@ sealed interface QuantityInputResult {
     data class Valid(val text: String) : QuantityInputResult
 
     /**
-     * The text is a number with too many digits. [text] is still cleaned, so the field can show
-     * it and the state can explain the problem.
+     * The text is a number with too many digits. [text] is still cleaned. The field can show
+     * it, and the state can explain the problem.
      */
     data class TooLong(val text: String, val problem: LengthProblem) : QuantityInputResult
 

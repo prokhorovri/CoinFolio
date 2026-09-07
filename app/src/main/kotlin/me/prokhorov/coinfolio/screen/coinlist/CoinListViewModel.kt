@@ -37,9 +37,9 @@ class CoinListViewModel @Inject constructor(
     }
 
     /**
-     * One error goes to one place. While coins are on screen the error is temporary, so it goes to
-     * a snackbar. While the list is still empty the error is the whole screen, so it goes to the
-     * state and a snackbar would only repeat it.
+     * While coins are on screen the error is temporary, so it goes to a snackbar. While the
+     * list is still empty the error fills the whole screen. It goes to the state, and a
+     * snackbar would only repeat it.
      */
     private fun loadCoins() {
         viewModelScope.launch {

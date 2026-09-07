@@ -7,8 +7,8 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * The same rules in a locale where the comma is the decimal separator and the dot groups digits.
- * This is the half that a machine running in English would never catch.
+ * The same rules in a locale where the comma is the decimal separator. The dot groups digits
+ * there. A machine running in English would never catch these cases.
  */
 class QuantityInputGermanLocaleTest {
 
@@ -29,8 +29,8 @@ class QuantityInputGermanLocaleTest {
         assertThat(result).isEqualTo(QuantityInputResult.Valid("1000"))
     }
 
-    // Worth knowing: a user who types the English separator gets a number ten times bigger,
-    // with no warning. The dot is a grouping separator here, so it is simply removed.
+    // Worth knowing: a user who types the English separator gets a number ten times bigger.
+    // There is no warning. The dot is a grouping separator here, so it is simply removed.
     @Test
     fun `a dot inside a decimal number is dropped too`() {
         val result = QuantityInput.normalize("1.5")

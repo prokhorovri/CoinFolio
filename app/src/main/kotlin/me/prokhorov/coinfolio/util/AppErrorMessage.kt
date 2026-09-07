@@ -15,8 +15,8 @@ import me.prokhorov.coinfolio.domain.result.AppError
 @Composable
 @ReadOnlyComposable
 fun AppError.asMessage(): String {
-    // Only Server puts a number into its text. The other errors call it with no arguments, so
-    // their text is not formatted and a `%` sign in it is safe.
+    // Only Server puts a number into its text. The other errors call it with no arguments.
+    // Their text is not formatted, so a `%` sign in it is safe.
     return when (this) {
         is AppError.Server -> stringResource(messageRes, code)
         else -> stringResource(messageRes)

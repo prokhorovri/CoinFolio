@@ -4,8 +4,8 @@ import java.text.DecimalFormatSymbols
 import java.util.Locale
 
 /**
- * One source of the locale number symbols for the whole app, so the quantity field and every
- * price use the same separator. It is read on every call, because the user can change the system
+ * One source of the locale number symbols for the whole app. The quantity field and every
+ * price then use the same separator. It is read on every call. The user can change the system
  * language while the app runs.
  */
 internal fun localeSymbols(): DecimalFormatSymbols {
@@ -13,8 +13,8 @@ internal fun localeSymbols(): DecimalFormatSymbols {
 }
 
 /**
- * Swaps the dot for the separator of the user's locale. Every number on screen goes through here,
- * so the prices and the quantity field always look the same. The way back is
+ * Swaps the dot for the separator of the user's locale. Every number on screen goes through
+ * here. So the prices and the quantity field always look the same. The way back is
  * [QuantityInput.toCanonical].
  *
  * No grouping separator is added.

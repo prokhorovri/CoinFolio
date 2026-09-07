@@ -34,7 +34,7 @@ class CoinDetailViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    // The field shows the decimal separator of the locale, so the machine that runs the build
+    // The field shows the decimal separator of the locale. So the machine that runs the build
     // must not decide what the text looks like.
     @get:Rule
     val localeRule = DefaultLocaleRule(Locale.US)
@@ -118,8 +118,8 @@ class CoinDetailViewModelTest {
         assertThat(state.savedQuantity).isNull()
     }
 
-    // The field belongs to the user after the first keystroke. The database answers later, and
-    // without this rule its value would replace the text while it is being typed.
+    // The field belongs to the user after the first keystroke. The database answers later.
+    // Without this rule its value would replace the text while it is being typed.
     @Test
     fun `the database does not replace text the user typed`() = runTest {
         makeCoinAvailable()
@@ -253,8 +253,8 @@ class CoinDetailViewModelTest {
         assertThat(state.coin?.id).isEqualTo(COIN_ID)
     }
 
-    // A failed read ends the flow, so nothing is listening to the database any more. A save that
-    // works proves the database answers again, so the ViewModel has to subscribe a second time.
+    // A failed read ends the flow, so nothing is listening to the database any more. A save
+    // that works proves the database answers again. So the ViewModel has to subscribe again.
     @Test
     fun `a save after a read failure starts reading again`() {
         makeCoinAvailable()

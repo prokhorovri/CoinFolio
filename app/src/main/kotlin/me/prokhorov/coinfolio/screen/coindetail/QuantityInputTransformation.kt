@@ -22,10 +22,10 @@ object QuantityInputTransformation : InputTransformation {
         val cleaned = QuantityInput.normalize(typed).cleanedText
 
         if (cleaned == null) {
-            // Moving the cursor calls this too, and changeCount is 0 for it, because changes
-            // only holds text edits. Text that is already wrong, for example after the user
-            // changed the language, must stay editable: reverting a cursor move would freeze
-            // the field, and nothing could fix it anymore.
+            // Moving the cursor calls this too, and changeCount is 0 for it. `changes` only
+            // holds text edits. Text that is already wrong must stay editable, for example
+            // after the user changed the language. Reverting a cursor move would block every
+            // edit, and the user could not fix the text.
             if (changes.changeCount > 0) {
                 revertAllChanges()
             }
@@ -47,7 +47,7 @@ object QuantityInputTransformation : InputTransformation {
 
 /**
  * The text to put in the field, or null when the input must be refused. Only this file needs
- * `Valid` and `TooLong` together, so the shared type keeps no nullable member.
+ * `Valid` and `TooLong` together. So the shared type keeps no nullable member.
  */
 private val QuantityInputResult.cleanedText: String?
     get() = when (this) {

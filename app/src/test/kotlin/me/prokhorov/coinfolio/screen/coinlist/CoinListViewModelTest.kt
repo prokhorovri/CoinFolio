@@ -63,7 +63,7 @@ class CoinListViewModelTest {
     }
 
     // Coins are already on screen, so the error is only about this one load. It goes to a
-    // snackbar, and the state keeps the old list with no error.
+    // snackbar. The state keeps the old list with no error.
     @Test
     fun `a failure with coins on screen goes to the effect`() = runTest {
         repository.topCoins = Resource.Success(listOf(createCoin("bitcoin")))

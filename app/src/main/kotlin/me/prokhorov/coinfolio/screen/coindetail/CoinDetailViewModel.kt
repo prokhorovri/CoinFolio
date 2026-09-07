@@ -42,11 +42,11 @@ class CoinDetailViewModel @Inject constructor(
     val effect: SharedFlow<CoinDetailEffect> = _effect.asSharedFlow()
 
     /**
-     * True after the first keystroke, or after a save that could not read the text. Until then the
-     * field follows the database, and an untouched field is never marked as wrong. The screen never
-     * draws it, so it stays out of the state.
+     * True after the first keystroke, or after a save that could not read the text. Until then
+     * the field follows the database. An untouched field is never marked as wrong. The screen
+     * never draws it, so it stays out of the state.
      *
-     * Only the main thread touches it, so a plain field is safe: `viewModelScope` runs on
+     * Only the main thread touches it, so a plain field is safe. `viewModelScope` runs on
      * `Dispatchers.Main.immediate`, and a flow collects on the thread of the collector. Do not
      * start a coroutine here with another dispatcher.
      */
@@ -66,9 +66,9 @@ class CoinDetailViewModel @Inject constructor(
     }
 
     /**
-     * One error goes to one place. While the coin is on screen the error is temporary, so it goes
-     * to a snackbar. While the screen is still empty the error is the whole screen, so it goes to
-     * the state and a snackbar would only repeat it.
+     * While the coin is on screen the error is temporary, so it goes to a snackbar. While the
+     * screen is still empty the error fills the whole screen. It goes to the state, and a
+     * snackbar would only repeat it.
      */
     private fun loadCoin() {
         viewModelScope.launch {
@@ -88,14 +88,14 @@ class CoinDetailViewModel @Inject constructor(
     }
 
     /**
-     * A failure is the last value of this flow, so the holding stops updating. The error goes to
-     * the state and not to an effect, because nothing collects effects at init yet.
+     * A failure is the last value of this flow, so the holding stops updating. The error goes
+     * to the state and not to an effect. Nothing collects effects at init yet.
      *
-     * A finished flow cannot start again. Calling this function makes a new one, so call it only
-     * while [CoinDetailUiState.holdingError] is set, when the old collector is already done.
+     * A finished flow cannot start again. Calling this function makes a new one. So call it
+     * only while [CoinDetailUiState.holdingError] is set, when the old collector is done.
      *
-     * The stored value also fills the field, but only while the user has typed nothing. After the
-     * first keystroke the field belongs to the user, even if the database answers later.
+     * The stored value also fills the field, but only while the user has typed nothing. After
+     * the first keystroke the field belongs to the user, even if the database answers later.
      */
     private fun observeHolding() {
         viewModelScope.launch {
@@ -123,9 +123,9 @@ class CoinDetailViewModel @Inject constructor(
     }
 
     /**
-     * The text is stored as it arrives, always. Dropping it here would split the truth in two:
-     * the field would show the new text while the state kept the old one, and nothing would tell
-     * the user why the number cannot be saved.
+     * The text is stored as it arrives, always. If it were dropped here, the field would show
+     * the new text while the state kept the old one. Nothing would then tell the user why the
+     * number cannot be saved.
      *
      * [derived] then says what is wrong with it and whether it can be saved.
      */
@@ -136,15 +136,15 @@ class CoinDetailViewModel @Inject constructor(
 
     /**
      * The field is set from the value we just wrote, not from the database. The database sends
-     * the same value back later, and by then it would replace anything typed in the meantime.
+     * the same value back later. By then it would replace anything typed in the meantime.
      *
-     * If the write succeeds while [observeHolding] is dead, the database accepts queries again,
-     * so it is worth reading once more. A stored quantity in the wrong format breaks every read
-     * while writes still work, and saving a new value replaces that row. A full disk breaks the
-     * writing too, so this code never runs in that case.
+     * If the write succeeds while [observeHolding] has ended, the database accepts queries
+     * again. So it is worth reading once more. A stored quantity in the wrong format breaks
+     * every read while writes still work. Saving a new value replaces that row. A full disk
+     * breaks the writing too, so this code never runs in that case.
      *
-     * A save already in flight blocks a new one. The button is disabled while it runs, but an
-     * intent can also arrive from somewhere else, so the guard belongs here too.
+     * A save that is already running blocks a new one. The button is disabled while it runs.
+     * But an intent can also arrive from somewhere else, so the guard belongs here too.
      */
     private fun saveHolding() {
         val currentState = _state.value
@@ -152,9 +152,10 @@ class CoinDetailViewModel @Inject constructor(
 
         val quantity = QuantityInput.normalize(currentState.quantityInput).toQuantity()
         if (quantity == null) {
-            // Only a stale state gets here: the number rules follow the locale, which can change
-            // while the screen is open. The edited flag lets derived() fill quantityError, so the
-            // field explains the problem instead of the button doing nothing.
+            // Only a stale state gets here. The number rules follow the locale, and the locale
+            // can change while the screen is open. The edited flag lets derived() fill
+            // quantityError. The field then explains the problem, instead of the button doing
+            // nothing.
             isQuantityEdited = true
             updateState { it }
             return
@@ -183,9 +184,9 @@ class CoinDetailViewModel @Inject constructor(
     }
 
     /**
-     * The only way to change the state. It runs [derived] after every change, so the fields that
-     * follow from the others can never fall behind. Without it each caller would have to remember
-     * which of them its change affects.
+     * The only way to change the state. It runs [derived] after every change. The fields that
+     * follow from the others then always match. Without it each caller would have to remember
+     * which of those fields its change affects.
      */
     private fun updateState(transform: (CoinDetailUiState) -> CoinDetailUiState) {
         _state.update { transform(it).derived() }

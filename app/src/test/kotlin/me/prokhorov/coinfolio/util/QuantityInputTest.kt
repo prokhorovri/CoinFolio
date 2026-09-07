@@ -54,8 +54,8 @@ class QuantityInputTest {
         assertThat(result).isEqualTo(QuantityInputResult.Valid("1000"))
     }
 
-    // Russian and French put a no break space between groups of digits, and Kotlin's
-    // isWhitespace covers it while Java's does not.
+    // Russian and French put a no break space between groups of digits. Kotlin's isWhitespace
+    // covers it, Java's does not.
     @Test
     fun `a no break space is dropped`() {
         val result = QuantityInput.normalize("1\u00A0000")

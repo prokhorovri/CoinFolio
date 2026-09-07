@@ -98,7 +98,7 @@ fun CoinDetailScreen(
                     }
 
                     // The edit is over, so the keyboard goes away. It has to happen before the
-                    // snackbar call, which waits until the snackbar is gone.
+                    // snackbar call. That call waits until the snackbar is gone.
                     is CoinDetailEffect.HoldingSaved -> {
                         focusManager.clearFocus()
                         snackbarHostState.showSnackbar(savedMessage)
@@ -131,7 +131,7 @@ private fun CoinDetailContent(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         // The keyboard covers the bottom of the screen, so it has to be part of the insets.
-        // Without it the Save button stays under the keyboard and a snackbar opens behind it.
+        // Without it the Save button stays under the keyboard. A snackbar also opens behind it.
         contentWindowInsets = ScaffoldDefaults.contentWindowInsets.union(WindowInsets.ime),
         topBar = {
             TopAppBar(
@@ -358,9 +358,9 @@ private fun HoldingSection(
     val currentInput by rememberUpdatedState(quantityInput)
     val currentOnQuantityChange by rememberUpdatedState(onQuantityChange)
 
-    // The field keeps its own text, so the cursor stays in place, and this effect sends it up.
-    // It runs once, because quantityState never changes, so the two current* values above
-    // are what stays fresh.
+    // The field keeps its own text, so the cursor stays in place. This effect sends the text up.
+    // It runs once, because quantityState never changes. The two current* values above are
+    // the ones that stay fresh.
     // Text the ViewModel already knows is skipped: it would mark the field as edited.
     LaunchedEffect(quantityState) {
         snapshotFlow { quantityState.text.toString() }
@@ -410,7 +410,7 @@ private fun HoldingSection(
             supportingText = quantityErrorMessage?.let { { Text(text = it) } },
             isError = quantityErrorMessage != null,
             inputTransformation = QuantityInputTransformation,
-            // Without an explicit action the Done key only hides the keyboard, and the field
+            // Without an explicit action the Done key only hides the keyboard. The field then
             // keeps the cursor.
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Decimal,
@@ -426,8 +426,8 @@ private fun HoldingSection(
 }
 
 /**
- * Same idea as [AppError.asMessage]: the state says which rule the input broke, and presentation
- * turns that into text.
+ * Same idea as [AppError.asMessage]. The state says which rule the input broke, and
+ * presentation turns that into text.
  */
 @Composable
 @ReadOnlyComposable

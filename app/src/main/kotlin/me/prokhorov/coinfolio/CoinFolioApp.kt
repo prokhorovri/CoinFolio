@@ -8,8 +8,8 @@ import androidx.compose.ui.Modifier
 import me.prokhorov.coinfolio.navigation.AppNavGraph
 import me.prokhorov.coinfolio.ui.overlay.TopFadeOverlay
 
-// This is the app root. MainActivity calls it once with the whole window, so a modifier
-// parameter would never be used.
+// This is the app root. MainActivity calls it once with the whole window.
+// So a modifier parameter would never be used.
 @Suppress("ModifierMissing")
 @Composable
 fun CoinFolioApp() {

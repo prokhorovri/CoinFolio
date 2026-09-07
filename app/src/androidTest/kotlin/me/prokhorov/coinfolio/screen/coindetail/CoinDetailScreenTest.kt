@@ -45,7 +45,7 @@ private const val TOO_LARGE_QUANTITY = "1234567890123456"
  * Shows the real screen with a real ViewModel over the fakes. The coin id comes from
  * [SavedStateHandle], like in the app.
  *
- * Method names use underscores. A space in a method name needs minSdk 30, and this app allows 28.
+ * Method names use underscores. A space in a method name needs minSdk 30. This app allows 28.
  */
 @RunWith(AndroidJUnit4::class)
 class CoinDetailScreenTest {

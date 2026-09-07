@@ -12,8 +12,9 @@ private val BILLION = BigDecimal("1000000000")
 private val TRILLION = BigDecimal("1000000000000")
 
 /**
- * Prices of one cent or more use two decimals. A smaller price would print as $0.00 with a fixed
- * scale, so it uses significant digits instead and a coin like SHIB still shows a useful value.
+ * Prices of one cent or more use two decimals. A smaller price would print as $0.00 with a
+ * fixed scale. So it uses significant digits instead, and a coin like SHIB still shows a
+ * useful value.
  */
 fun BigDecimal.formatAsUsd(): String {
     val magnitude = abs()
@@ -30,7 +31,7 @@ fun BigDecimal.formatAsUsd(): String {
 /**
  * Coin amounts keep their full precision. Only the extra zeros at the end are removed.
  *
- * This one keeps the dot on purpose. It is the canonical form that Room and [BigDecimal] use, and
+ * This one keeps the dot on purpose. It is the canonical form that Room and [BigDecimal] use.
  * [QuantityInput.format] builds the text of the field from it.
  */
 fun BigDecimal.formatAsQuantity(): String {
@@ -38,7 +39,7 @@ fun BigDecimal.formatAsQuantity(): String {
 }
 
 /**
- * Zero is shown as "+0.00%" and never as "-0.00%". A change of -0.001 rounds to zero, and
+ * Zero is shown as "+0.00%" and never as "-0.00%". A change of -0.001 rounds to zero.
  * BigDecimal has no negative zero, so the minus sign cannot come back.
  */
 fun BigDecimal.formatAsPercent(): String {
@@ -48,8 +49,8 @@ fun BigDecimal.formatAsPercent(): String {
 }
 
 /**
- * Tells if a price change is a gain. It rounds the same way as [formatAsPercent]. Without that,
- * a value of -0.001 would be shown as "+0.00%" in the loss color.
+ * Tells if a price change is a gain. It rounds the same way as [formatAsPercent]. Without
+ * that, a value of -0.001 would show "+0.00%" in the loss color.
  */
 fun BigDecimal.isGain(): Boolean {
     return setScale(2, RoundingMode.HALF_UP).signum() >= 0

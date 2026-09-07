@@ -12,8 +12,9 @@ data class CoinDetailUiState(
     val quantityError: QuantityError? = null,
     val savedQuantity: BigDecimal? = null,
     /**
-     * Why the stored holding could not be read. It is shown inside the holding section only, not
-     * on the whole screen like [error]. While it is set, nothing is observing the database.
+     * Why the stored holding could not be read. It is shown inside the holding section only.
+     * [error] is the one that fills the whole screen. While it is set, nothing is observing
+     * the database.
      */
     val holdingError: AppError? = null,
     val isSaving: Boolean = false,
