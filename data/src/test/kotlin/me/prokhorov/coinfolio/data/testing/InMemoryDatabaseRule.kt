@@ -7,9 +7,11 @@ import org.junit.rules.ExternalResource
 import org.robolectric.RuntimeEnvironment
 
 /**
- * Builds a real Room database that lives in memory only, so every test starts on an empty table
- * and nothing is left on disk. Robolectric is what supplies the application context, so a test
- * using this rule must run with `RobolectricTestRunner`.
+ * Builds a real Room database that lives in memory only. Every test then starts on an empty
+ * table, and nothing is left on disk.
+ *
+ * Robolectric supplies the application context. So a test using this rule must run with
+ * `RobolectricTestRunner`.
  */
 class InMemoryDatabaseRule : ExternalResource() {
 
@@ -27,7 +29,7 @@ class InMemoryDatabaseRule : ExternalResource() {
             .build()
     }
 
-    // Closing twice is safe, so a test can close the database itself to test this failure path.
+    // Closing twice is safe. So a test can close the database itself to test this failure path.
     override fun after() {
         database.close()
     }

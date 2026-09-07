@@ -23,11 +23,11 @@ import org.robolectric.RobolectricTestRunner
 private const val COIN_ID = "bitcoin"
 
 /**
- * A real in-memory database cannot run out of disk space, so the `AppError.Storage`
- * path needs a DAO that fails on purpose.
+ * A real in-memory database cannot run out of disk space. So the `AppError.Storage` path
+ * needs a DAO that fails on purpose.
  *
- * Robolectric is needed here because a plain unit test cannot create an `SQLException`
- * with the stub `android.jar`.
+ * Robolectric is needed here. A plain unit test cannot create an `SQLException` with the
+ * stub `android.jar`.
  */
 @RunWith(RobolectricTestRunner::class)
 class PortfolioRepositoryFailureTest {
@@ -76,8 +76,8 @@ class PortfolioRepositoryFailureTest {
         assertThat(result).isEqualTo(Resource.Failure(AppError.Unexpected))
     }
 
-    // Leaving the screen cancels the coroutine. This is not a failure,
-    // so it should stay as a cancellation instead of becoming Resource.Failure.
+    // Leaving the screen cancels the coroutine. This is not a failure. It must stay a
+    // cancellation and not become Resource.Failure.
     @Test
     fun `a cancelled write is not turned into a failure`() = runTest {
         val repository = createRepository {

@@ -52,8 +52,8 @@ class CoinDetailMapperTest {
         )
     }
 
-    // The whole market_data block is optional in the response, and the mapper must not crash on
-    // it. Every money field then stays null, and the screen shows a dash for each one.
+    // The whole market_data block is optional in the response. The mapper must not crash on it.
+    // Every money field then stays null, and the screen shows a dash.
     @Test
     fun `a response with no market data leaves the money fields null`() {
         val dto = CoinDetailDto(id = "bitcoin", symbol = "btc", name = "Bitcoin")
@@ -72,7 +72,7 @@ class CoinDetailMapperTest {
     }
 
     // The image url is not nullable in the domain model, because Coil takes a String. An empty
-    // one means "no image", and Coil shows the placeholder.
+    // string means "no image", and Coil shows the placeholder.
     @Test
     fun `a missing image gives an empty url`() {
         val dto = CoinDetailDto(id = "bitcoin", symbol = "btc", name = "Bitcoin", image = null)

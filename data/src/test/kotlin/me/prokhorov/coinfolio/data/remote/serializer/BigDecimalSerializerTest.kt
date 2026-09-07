@@ -42,8 +42,7 @@ class BigDecimalSerializerTest {
     }
 
     // Real values from /coins/markets on 2026-09-01. CoinGecko writes a small price in exponent
-    // form with a lowercase e, so reading that form is not an edge case, it is the normal path
-    // for cheap coins.
+    // form with a lowercase e. That is the normal form for cheap coins, not a rare case.
     @Test
     fun `a price in exponent form is read`() {
         assertThat(decode("5.08e-06")).isEqualTo(BigDecimal("0.00000508"))
@@ -59,15 +58,15 @@ class BigDecimalSerializerTest {
         assertThat(decode("5.6366e-11")).isEqualTo(BigDecimal("0.000000000056366"))
     }
 
-    // isEqualTo, not isEqualByComparingTo: the trailing zero must survive, because it says how
+    // isEqualTo, not isEqualByComparingTo. The trailing zero must stay, because it says how
     // exact the price is.
     @Test
     fun `reading keeps the scale`() {
         assertThat(decode("1.50")).isEqualTo(BigDecimal("1.50"))
     }
 
-    // The serializer reads the text of the JSON value, so quotes around a number do not break it.
-    // CoinGecko sends numbers without quotes, but a quoted one still works.
+    // The serializer reads the text of the JSON value. So quotes around a number do not break
+    // it. CoinGecko sends numbers without quotes, but a quoted one still works.
     @Test
     fun `a quoted number is read as a number`() {
         assertThat(decode(""""1.5"""")).isEqualTo(BigDecimal("1.5"))
@@ -107,7 +106,7 @@ class BigDecimalSerializerTest {
     }
 
     // toString writes an exponent below about 1e-8. That is valid JSON, and CoinGecko itself
-    // sends prices in this form, so it is safe to write.
+    // sends prices in this form. So it is safe to write.
     @Test
     fun `a very small price is written with an exponent`() {
         val encoded = json.encodeToString(PriceHolder(BigDecimal("0.00000012")))

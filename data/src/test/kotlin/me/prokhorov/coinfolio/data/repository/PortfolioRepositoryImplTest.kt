@@ -19,8 +19,8 @@ import org.robolectric.RobolectricTestRunner
 private const val COIN_ID = "bitcoin"
 
 /**
- * This test uses a real in-memory database and checks the mappers, DAO,
- * and `Resource` wrapping together, like the app does.
+ * This test uses a real in-memory database. It checks the mappers, DAO and `Resource`
+ * wrapping together, like the app does.
  */
 @RunWith(RobolectricTestRunner::class)
 class PortfolioRepositoryImplTest {

@@ -97,8 +97,8 @@ class HoldingDaoTest {
         }
     }
 
-    // SHIB amounts can have many decimal places. We store them as TEXT to avoid losing digits,
-    // so this checks that the value keeps its full precision.
+    // SHIB amounts can have many decimal places. We store them as TEXT, so no digit is lost.
+    // This test checks that the value keeps every digit.
     @Test
     fun `a shib sized quantity keeps every digit`() = runTest {
         val quantity = BigDecimal("123456789012.12345678")

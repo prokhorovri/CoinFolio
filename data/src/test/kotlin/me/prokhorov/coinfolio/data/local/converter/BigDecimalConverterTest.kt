@@ -13,8 +13,8 @@ class BigDecimalConverterTest {
         assertThat(converter.fromString("0.5")).isEqualTo(BigDecimal("0.5"))
     }
 
-    // Use toPlainString() so small numbers are written as normal decimals, not 1E-8,
-    // which makes them easier for SQLite to compare and read back.
+    // Use toPlainString(), so small numbers are written as normal decimals, not 1E-8.
+    // SQLite can then compare and read them back more easily.
     @Test
     fun `a small number is stored without an exponent`() {
         assertThat(converter.toString(BigDecimal("0.00000001"))).isEqualTo("0.00000001")
