@@ -11,11 +11,11 @@ import me.prokhorov.coinfolio.domain.result.AppError
 import me.prokhorov.coinfolio.domain.result.Resource
 
 /**
- * Keeps the holdings in memory, so a test can save one and read it back the way the real
+ * Keeps the holdings in memory. A test can save one and read it back, like the real
  * database does. Set [error] to make every call fail.
  *
- * A read failure ends the flow, like the real code in `:data` does with `catch`. So a caller
- * that wants updates again has to subscribe again, and a test can check that it does.
+ * A read failure ends the flow, like the real code in `:data` does with `catch`. A caller
+ * that wants updates again has to subscribe again. A test can check that it does.
  */
 class FakePortfolioRepository : PortfolioRepository {
 

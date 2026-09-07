@@ -3,10 +3,9 @@ package me.prokhorov.coinfolio.domain.model
 import java.math.BigDecimal
 
 /**
- * The model for one coin. It is separate from [Coin] because the endpoint used for the list
- * cannot provide these fields. One shared model would make every extra field nullable for list
- * items too. A nullable field here means the API really does not return it: new coins have no
- * all-time high, and some coins report no supply.
+ * The model for one coin. It is separate from [Coin] because the list endpoint does not
+ * return these fields. A nullable field means the API really does not send it: new coins
+ * have no all-time high, and some coins report no supply.
  */
 data class CoinDetail(
     val id: String,

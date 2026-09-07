@@ -10,12 +10,11 @@ import me.prokhorov.coinfolio.domain.testing.createHolding
 import org.junit.Test
 
 /**
- * The only use case with its own rule: a quantity of zero deletes the holding, and does not
+ * The only use case with its own rule. A quantity of zero deletes the holding. It does not
  * store a row with zero.
  *
- * Every check here uses isEqualTo, not isEqualByComparingTo. The fake returns the same scale
- * it was given, so exact equality is the stronger check. In Room the scale can change, so
- * there we will compare by value.
+ * Every check here uses isEqualTo, not isEqualByComparingTo. The fake returns the same
+ * scale it was given. So exact equality is the stronger check.
  */
 class SaveHoldingUseCaseTest {
 
@@ -74,7 +73,7 @@ class SaveHoldingUseCaseTest {
     }
 
     @Test
-    fun `only the coin being saved is touched`() = runTest {
+    fun `only the coin being saved is changed`() = runTest {
         saveHolding(createHolding("bitcoin", "0.5"))
         saveHolding(createHolding("ethereum", "2"))
 

@@ -5,7 +5,7 @@ import me.prokhorov.coinfolio.domain.model.Coin
 import me.prokhorov.coinfolio.domain.model.CoinDetail
 import me.prokhorov.coinfolio.domain.model.Holding
 
-/** Short builders, so a test says only the field it cares about. */
+/** Short builders, so a test sets only the field it cares about. */
 
 fun createCoin(id: String, price: String = "100"): Coin = Coin(
     id = id,

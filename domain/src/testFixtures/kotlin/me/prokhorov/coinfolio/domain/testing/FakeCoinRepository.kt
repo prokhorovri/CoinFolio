@@ -10,8 +10,8 @@ import me.prokhorov.coinfolio.domain.result.Resource
  * Returns the data that a test sets.
  *
  * Details are stored per coin id, not in one field. So a test can store two coins and ask
- * for one. A wrong id returns the other coin. That way we check the id itself, and we do not
- * need to ask which methods were called.
+ * for one. A wrong id returns the other coin. That way a test checks the id itself, without
+ * asking which methods were called.
  */
 class FakeCoinRepository : CoinRepository {
 

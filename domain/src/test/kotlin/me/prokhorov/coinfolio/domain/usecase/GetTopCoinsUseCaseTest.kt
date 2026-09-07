@@ -14,7 +14,7 @@ class GetTopCoinsUseCaseTest {
     private val getTopCoins = GetTopCoinsUseCase(repository)
 
     @Test
-    fun `the coins of the repository are returned unchanged`() = runTest {
+    fun `the coins from the repository are returned unchanged`() = runTest {
         val coins = listOf(createCoin("bitcoin"), createCoin("ethereum"))
         repository.topCoins = Resource.Success(coins)
 

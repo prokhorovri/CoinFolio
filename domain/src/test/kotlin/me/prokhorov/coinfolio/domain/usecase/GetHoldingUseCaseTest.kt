@@ -23,9 +23,9 @@ class GetHoldingUseCaseTest {
         assertThat(result).isEqualTo(Resource.Success(createHolding("bitcoin", "0.5")))
     }
 
-    // "Not held" and "held zero" must not look the same to the caller.
+    // "Not held" and "a quantity of zero" must not look the same to the caller.
     @Test
-    fun `a coin that is not held emits a success holding null`() = runTest {
+    fun `a coin that is not held emits success with null`() = runTest {
         repository.saveHolding(createHolding("bitcoin", "0.5"))
 
         val result = getHolding("ethereum").first()

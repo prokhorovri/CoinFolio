@@ -13,8 +13,8 @@ class GetCoinDetailUseCaseTest {
     private val repository = FakeCoinRepository()
     private val getCoinDetail = GetCoinDetailUseCase(repository)
 
-    // Two coins are in the repository, so a wrong id would return the wrong coin, not just a
-    // failure. That is what proves the id is passed down.
+    // Two coins are in the repository. A wrong id would return the other coin, not a failure.
+    // So this test proves the id really reaches the repository.
     @Test
     fun `the detail of the requested coin is returned`() = runTest {
         val ethereum = createCoinDetail("ethereum")
