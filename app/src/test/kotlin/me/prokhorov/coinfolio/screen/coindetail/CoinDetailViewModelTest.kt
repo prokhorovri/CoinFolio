@@ -51,7 +51,7 @@ class CoinDetailViewModelTest {
         )
     }
 
-    private fun coinIsAvailable() {
+    private fun makeCoinAvailable() {
         coinRepository.coinDetails = mapOf(COIN_ID to Resource.Success(createCoinDetail(COIN_ID)))
     }
 
@@ -59,7 +59,7 @@ class CoinDetailViewModelTest {
 
     @Test
     fun `loads the coin on start`() {
-        coinIsAvailable()
+        makeCoinAvailable()
 
         val state = viewModel().state.value
 
@@ -81,7 +81,7 @@ class CoinDetailViewModelTest {
     // The coin is already on screen, so this error is only about the second load.
     @Test
     fun `a failure with the coin on screen goes to the effect`() = runTest {
-        coinIsAvailable()
+        makeCoinAvailable()
         val viewModel = viewModel()
 
         viewModel.effect.test {
@@ -99,7 +99,7 @@ class CoinDetailViewModelTest {
 
     @Test
     fun `the stored holding fills the field`() = runTest {
-        coinIsAvailable()
+        makeCoinAvailable()
         portfolioRepository.saveHolding(createHolding(COIN_ID, "2.5"))
 
         val state = viewModel().state.value
@@ -110,7 +110,7 @@ class CoinDetailViewModelTest {
 
     @Test
     fun `a coin that is not held leaves the field empty`() {
-        coinIsAvailable()
+        makeCoinAvailable()
 
         val state = viewModel().state.value
 
@@ -122,7 +122,7 @@ class CoinDetailViewModelTest {
     // without this rule its value would replace the text while it is being typed.
     @Test
     fun `the database does not replace text the user typed`() = runTest {
-        coinIsAvailable()
+        makeCoinAvailable()
         val viewModel = viewModel()
 
         viewModel.onIntent(CoinDetailIntent.QuantityChanged("7"))
@@ -135,7 +135,7 @@ class CoinDetailViewModelTest {
 
     @Test
     fun `an untouched empty field is not an error`() {
-        coinIsAvailable()
+        makeCoinAvailable()
 
         val state = viewModel().state.value
 
@@ -145,7 +145,7 @@ class CoinDetailViewModelTest {
 
     @Test
     fun `a letter in the field is reported`() {
-        coinIsAvailable()
+        makeCoinAvailable()
         val viewModel = viewModel()
 
         viewModel.onIntent(CoinDetailIntent.QuantityChanged("1a"))
@@ -157,7 +157,7 @@ class CoinDetailViewModelTest {
 
     @Test
     fun `too many fraction digits are reported`() {
-        coinIsAvailable()
+        makeCoinAvailable()
         val viewModel = viewModel()
 
         viewModel.onIntent(CoinDetailIntent.QuantityChanged("1." + "1".repeat(19)))
@@ -169,7 +169,7 @@ class CoinDetailViewModelTest {
 
     @Test
     fun `a valid number can be saved`() {
-        coinIsAvailable()
+        makeCoinAvailable()
         val viewModel = viewModel()
 
         viewModel.onIntent(CoinDetailIntent.QuantityChanged("1.5"))
@@ -194,7 +194,7 @@ class CoinDetailViewModelTest {
 
     @Test
     fun `a save stores the quantity`() = runTest {
-        coinIsAvailable()
+        makeCoinAvailable()
         val viewModel = viewModel()
         viewModel.onIntent(CoinDetailIntent.QuantityChanged("1.5"))
 
@@ -212,7 +212,7 @@ class CoinDetailViewModelTest {
     // Zero is a valid quantity, and the use case turns it into a delete.
     @Test
     fun `saving zero clears the holding`() = runTest {
-        coinIsAvailable()
+        makeCoinAvailable()
         portfolioRepository.saveHolding(createHolding(COIN_ID, "2.5"))
         val viewModel = viewModel()
 
@@ -224,7 +224,7 @@ class CoinDetailViewModelTest {
 
     @Test
     fun `a failed save goes to the effect`() = runTest {
-        coinIsAvailable()
+        makeCoinAvailable()
         val viewModel = viewModel()
         viewModel.onIntent(CoinDetailIntent.QuantityChanged("1.5"))
         portfolioRepository.error = AppError.Storage
@@ -242,7 +242,7 @@ class CoinDetailViewModelTest {
 
     @Test
     fun `a read failure goes to holdingError`() {
-        coinIsAvailable()
+        makeCoinAvailable()
         portfolioRepository.error = AppError.Storage
 
         val state = viewModel().state.value
@@ -257,7 +257,7 @@ class CoinDetailViewModelTest {
     // works proves the database answers again, so the ViewModel has to subscribe a second time.
     @Test
     fun `a save after a read failure starts reading again`() {
-        coinIsAvailable()
+        makeCoinAvailable()
         portfolioRepository.error = AppError.Storage
         val viewModel = viewModel()
         assertThat(viewModel.state.value.holdingError).isEqualTo(AppError.Storage)

@@ -117,3 +117,11 @@ dependencyAnalysis {
 // buildHealth is not part of `check` by default, so wire it in. Now `./gradlew check` runs
 // Spotless, detekt, Android Lint, the unit tests and the dependency analysis together.
 tasks.named("check") { dependsOn(tasks.named("buildHealth")) }
+
+// One command for the whole project. `check` cannot run the UI tests, because they need a device.
+// Add --rerun-tasks when you want to ignore the up to date cache.
+tasks.register("verifyAll") {
+    group = "verification"
+    description = "Runs check and the UI tests on the managed device."
+    dependsOn("check", ":app:pixel6Api34DebugAndroidTest")
+}
