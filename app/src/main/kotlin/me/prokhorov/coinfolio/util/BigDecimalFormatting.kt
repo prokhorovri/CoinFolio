@@ -29,9 +29,8 @@ fun BigDecimal.formatAsUsd(): String {
 }
 
 /**
- * Coin amounts keep their full precision. Only the extra zeros at the end are removed.
- *
- * This one keeps the dot on purpose. It is the canonical form that Room and [BigDecimal] use.
+ * Coin amounts keep their full precision. Only the extra zeros at the end are removed. This one
+ * keeps the dot on purpose, because Room and [BigDecimal] use that form.
  * [QuantityInput.format] builds the text of the field from it.
  */
 fun BigDecimal.formatAsQuantity(): String {

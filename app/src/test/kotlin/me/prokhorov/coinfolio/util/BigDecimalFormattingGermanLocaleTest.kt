@@ -33,8 +33,8 @@ class BigDecimalFormattingGermanLocaleTest {
         assertThat(result).isEqualTo("1,50M")
     }
 
-    // This one is the exception on purpose. It is the canonical form that Room and BigDecimal
-    // read. So it must not follow the locale. QuantityInput.format localizes it for the field.
+    // This one is the exception on purpose. Room and BigDecimal read that form, so it must not
+    // follow the locale. QuantityInput.format localizes it for the field.
     @Test
     fun `a quantity keeps the dot whatever the locale is`() {
         val result = BigDecimal("1.5").formatAsQuantity()

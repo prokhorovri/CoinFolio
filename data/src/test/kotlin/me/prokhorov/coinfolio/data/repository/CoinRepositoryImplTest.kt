@@ -36,10 +36,9 @@ private val bitcoin = Coin(
 )
 
 /**
- * The whole remote stack: Retrofit, the JSON converter, the mappers and `apiCall`.
- *
- * It shows what a ViewModel gets for each kind of answer. `apiCall` catches every exception,
- * so a failure always arrives as a [Resource].
+ * The whole remote stack: Retrofit, the JSON converter, the mappers and `apiCall`. It shows what
+ * a ViewModel gets for each kind of answer. `apiCall` catches every exception, so a failure
+ * always arrives as a [Resource].
  */
 class CoinRepositoryImplTest {
 

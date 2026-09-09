@@ -4,10 +4,9 @@ import java.math.BigDecimal
 
 /**
  * The rules of the holding quantity field, in one place. The screen uses them to filter what
- * the user types. The state uses them to check what it holds.
- *
- * The field shows the separator of the user's locale. Everything below the UI uses a dot:
- * [BigDecimal], the domain models and Room.
+ * the user types. The state uses them to check what it holds. The field shows the separator of
+ * the user's locale. Everything below the UI uses a dot: [BigDecimal], the domain models and
+ * Room.
  */
 object QuantityInput {
     const val MAX_INTEGER_DIGITS = 15
@@ -15,10 +14,8 @@ object QuantityInput {
 
     /**
      * Removes the grouping separator of the locale and every space. Keeps digits with at most
-     * one decimal separator.
-     *
-     * Only the separator of the user's locale is a decimal separator. Any other separator
-     * character is refused.
+     * one decimal separator. Only the separator of the user's locale counts as a decimal
+     * separator. Any other separator character is refused.
      */
     fun normalize(text: CharSequence): QuantityInputResult {
         val symbols = localeSymbols()

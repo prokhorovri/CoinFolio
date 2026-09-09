@@ -43,12 +43,8 @@ class CoinDetailViewModel @Inject constructor(
 
     /**
      * True after the first keystroke, or after a save that could not read the text. Until then
-     * the field follows the database. An untouched field is never marked as wrong. The screen
-     * never draws it, so it stays out of the state.
-     *
-     * Only the main thread touches it, so a plain field is safe. `viewModelScope` runs on
-     * `Dispatchers.Main.immediate`, and a flow collects on the thread of the collector. Do not
-     * start a coroutine here with another dispatcher.
+     * the field follows the database. An untouched field is never marked as wrong. Only the main
+     * thread touches it. Do not start a coroutine here with another dispatcher.
      */
     private var isQuantityEdited = false
 
@@ -88,14 +84,9 @@ class CoinDetailViewModel @Inject constructor(
     }
 
     /**
-     * A failure is the last value of this flow, so the holding stops updating. The error goes
-     * to the state and not to an effect. Nothing collects effects at init yet.
-     *
-     * A finished flow cannot start again. Calling this function makes a new one. So call it
-     * only while [CoinDetailUiState.holdingError] is set, when the old collector is done.
-     *
-     * The stored value also fills the field, but only while the user has typed nothing. After
-     * the first keystroke the field belongs to the user, even if the database answers later.
+     * A read failure ends this flow, so call this function again to start a new one. Do that
+     * only while [CoinDetailUiState.holdingError] is set. The stored value fills the field only
+     * while the user has typed nothing.
      */
     private fun observeHolding() {
         viewModelScope.launch {
@@ -116,6 +107,8 @@ class CoinDetailViewModel @Inject constructor(
                         }
                     }
 
+                    // The error goes to the state, not to an effect. Nothing collects effects
+                    // at init yet.
                     is Resource.Failure -> updateState { it.copy(holdingError = result.error) }
                 }
             }
@@ -124,10 +117,8 @@ class CoinDetailViewModel @Inject constructor(
 
     /**
      * The text is stored as it arrives, always. If it were dropped here, the field would show
-     * the new text while the state kept the old one. Nothing would then tell the user why the
+     * the new text. The state would keep the old one. Nothing would then tell the user why the
      * number cannot be saved.
-     *
-     * [derived] then says what is wrong with it and whether it can be saved.
      */
     private fun updateQuantity(value: String) {
         isQuantityEdited = true
@@ -136,18 +127,14 @@ class CoinDetailViewModel @Inject constructor(
 
     /**
      * The field is set from the value we just wrote, not from the database. The database sends
-     * the same value back later. By then it would replace anything typed in the meantime.
-     *
-     * If the write succeeds while [observeHolding] has ended, the database accepts queries
-     * again. So it is worth reading once more. A stored quantity in the wrong format breaks
-     * every read while writes still work. Saving a new value replaces that row. A full disk
-     * breaks the writing too, so this code never runs in that case.
-     *
-     * A save that is already running blocks a new one. The button is disabled while it runs.
-     * But an intent can also arrive from somewhere else, so the guard belongs here too.
+     * the same value back later. It would then replace anything typed in the meantime. A write
+     * that works proves the database answers again. So a failed read can start over.
      */
     private fun saveHolding() {
         val currentState = _state.value
+
+        // The button is disabled while a save runs. But an intent can arrive from somewhere
+        // else, so the guard belongs here too.
         if (currentState.isSaving) return
 
         val quantity = QuantityInput.normalize(currentState.quantityInput).toQuantity()

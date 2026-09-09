@@ -11,10 +11,8 @@ import org.junit.Test
 
 /**
  * The only use case with its own rule. A quantity of zero deletes the holding. It does not
- * store a row with zero.
- *
- * Every check here uses isEqualTo, not isEqualByComparingTo. The fake returns the same
- * scale it was given. So exact equality is the stronger check.
+ * store a row with zero. Every check here uses isEqualTo, not isEqualByComparingTo. The fake
+ * returns the same scale it was given. So exact equality is the stronger check.
  */
 class SaveHoldingUseCaseTest {
 

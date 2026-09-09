@@ -21,7 +21,6 @@ private val json = Json { ignoreUnknownKeys = true }
 /**
  * Builds a [CoinApi] that calls this test server. Retrofit, OkHttp and the JSON converter are
  * the same ones the app uses. So a test checks the request and the parsing that really happen.
- *
  * The base URL is the server address, not [CoinApiConfig.BASE_URL]. A recorded path is then
  * only the part that [CoinApi] adds, like `/coins/markets`.
  */

@@ -7,13 +7,10 @@ import me.prokhorov.coinfolio.util.QuantityInput
 import me.prokhorov.coinfolio.util.QuantityInputResult
 
 /**
- * Applies [QuantityInput] rules while the user types or pastes:
- *
- * - a grouping separator or a space is removed, so `1,000.25` becomes `1000.25`
- * - a character that cannot be in a quantity is refused, and the field does not change
- * - a too long number is kept, because [CoinDetailUiState.quantityError] can explain it
- *
- * Cleaning rewrites the whole text, so the cursor is put back where the user left it.
+ * Applies [QuantityInput] rules while the user types or pastes. A grouping separator or a
+ * space is removed, so `1,000.25` becomes `1000.25`. A character that cannot be in a quantity
+ * is refused. A too long number is kept, because [CoinDetailUiState.quantityError] can explain
+ * it. Cleaning rewrites the whole text, so the cursor is put back where the user left it.
  */
 object QuantityInputTransformation : InputTransformation {
     @OptIn(ExperimentalFoundationApi::class)

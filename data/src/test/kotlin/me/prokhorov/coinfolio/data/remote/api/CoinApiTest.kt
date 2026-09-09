@@ -16,10 +16,9 @@ private const val MINIMAL_COIN_BODY = """{"id":"bitcoin","symbol":"btc","name":"
 
 /**
  * Checks the request that Retrofit builds from the annotations on [CoinApi]. It also checks how
- * a real response body is parsed.
- *
- * A wrong query parameter gives no error at runtime. CoinGecko answers with its own default.
- * The screen then shows data that looks right, but is not what we asked for.
+ * a real response body is parsed. A wrong query parameter gives no error at runtime. CoinGecko
+ * answers with its own default. The screen then shows data that looks right, but is not what
+ * we asked for.
  */
 class CoinApiTest {
 

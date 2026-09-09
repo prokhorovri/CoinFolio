@@ -11,10 +11,9 @@ import org.junit.runner.Description
 
 /**
  * `viewModelScope` runs on `Dispatchers.Main`, and a JVM test has no main thread. Without this
- * rule every ViewModel test fails at the first coroutine.
- *
- * The dispatcher is unconfined, so a coroutine started in `init` runs at once. That way a test
- * can read the state right after it builds the ViewModel.
+ * rule every ViewModel test fails at the first coroutine. The dispatcher is unconfined, so a
+ * coroutine started in `init` runs at once. A test can then read the state right after it
+ * builds the ViewModel.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class MainDispatcherRule(

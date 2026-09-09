@@ -13,11 +13,9 @@ import me.prokhorov.coinfolio.domain.result.Resource
 private const val TAG = "DbCall"
 
 /**
- * Turns any failure of a Room write into a [Resource]. So a ViewModel never gets an
- * exception. [asResource] does the same for reads.
- *
- * `ensureActive()` skips cancellation. It happens when the user leaves the screen during a
- * write, and that is not a failure.
+ * Turns any failure of a Room write into a [Resource]. So a ViewModel never gets an exception.
+ * [asResource] does the same for reads. `ensureActive()` skips cancellation. It happens when the
+ * user leaves the screen during a write. That is not a failure.
  */
 @Suppress("TooGenericExceptionCaught")
 internal suspend fun <T> dbCall(block: suspend () -> T): Resource<T> {

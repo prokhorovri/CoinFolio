@@ -14,10 +14,8 @@ internal fun localeSymbols(): DecimalFormatSymbols {
 
 /**
  * Swaps the dot for the separator of the user's locale. Every number on screen goes through
- * here. So the prices and the quantity field always look the same. The way back is
- * [QuantityInput.toCanonical].
- *
- * No grouping separator is added.
+ * here. So the prices and the quantity field always look the same. No grouping separator is
+ * added. The way back is [QuantityInput.toCanonical].
  */
 internal fun String.localizeDecimalSeparator(): String {
     return replace('.', localeSymbols().decimalSeparator)

@@ -23,11 +23,9 @@ import org.robolectric.RobolectricTestRunner
 private const val COIN_ID = "bitcoin"
 
 /**
- * A real in-memory database cannot run out of disk space. So the `AppError.Storage` path
- * needs a DAO that fails on purpose.
- *
- * Robolectric is needed here. A plain unit test cannot create an `SQLException` with the
- * stub `android.jar`.
+ * A real in-memory database cannot run out of disk space. So the `AppError.Storage` path needs
+ * a DAO that fails on purpose. Robolectric is needed here. A plain unit test cannot create an
+ * `SQLException` with the stub `android.jar`.
  */
 @RunWith(RobolectricTestRunner::class)
 class PortfolioRepositoryFailureTest {

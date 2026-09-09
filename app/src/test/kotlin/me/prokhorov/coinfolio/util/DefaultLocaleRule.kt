@@ -5,10 +5,9 @@ import org.junit.rules.TestWatcher
 import org.junit.runner.Description
 
 /**
- * Pins the format locale for one test and puts the old one back after it.
- *
- * Every function under test reads the default locale through [localeSymbols]. Without this
- * rule the results would depend on the machine that runs the build.
+ * Sets the format locale for one test and puts the old one back after it. Every function under
+ * test reads the default locale through [localeSymbols]. Without this rule the results would
+ * depend on the machine that runs the build.
  */
 class DefaultLocaleRule(private val locale: Locale) : TestWatcher() {
 

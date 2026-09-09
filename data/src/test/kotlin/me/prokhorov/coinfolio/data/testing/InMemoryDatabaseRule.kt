@@ -8,10 +8,8 @@ import org.robolectric.RuntimeEnvironment
 
 /**
  * Builds a real Room database that lives in memory only. Every test then starts on an empty
- * table, and nothing is left on disk.
- *
- * Robolectric supplies the application context. So a test using this rule must run with
- * `RobolectricTestRunner`.
+ * table, and nothing is left on disk. Robolectric gives the application context. So a test using
+ * this rule must run with `RobolectricTestRunner`.
  */
 class InMemoryDatabaseRule : ExternalResource() {
 

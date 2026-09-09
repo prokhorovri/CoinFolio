@@ -29,10 +29,10 @@ detekt {
 // Applying the plugin to each module from the root would be cross-project configuration.
 // Gradle's isolated projects mode forbids that.
 //
-// One caveat: ktlint parses .editorconfig once per Gradle daemon and caches the result.
+// One trap: ktlint parses .editorconfig once per Gradle daemon and caches the result.
 // An edit to .editorconfig does not reach ktlint until the daemon restarts. Worse, a run that
-// used the stale cache is recorded as up to date. A later run can then replay the stale
-// verdict. After changing .editorconfig, run `./gradlew --stop`, then add `--rerun-tasks` to
+// used the old cache is recorded as up to date. A later run can then use that old answer
+// again. After changing .editorconfig, run `./gradlew --stop`, then add `--rerun-tasks` to
 // the next Spotless task. Upstream issue: https://github.com/diffplug/spotless/issues/1924
 spotless {
     val ktlintVersion = libs.versions.ktlint.get()

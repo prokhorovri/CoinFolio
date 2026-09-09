@@ -39,14 +39,10 @@ object BigDecimalSerializer : KSerializer<BigDecimal> {
     }
 
     /**
-     * Writes the price as a JSON number without quotes.
-     *
-     * We do not use [JsonPrimitive] here. It can convert the value to Double and change the
-     * number.
-     *
-     * toString() keeps the scale of the value. toPlainString() would write 1E+3 as 1000. That
-     * is the same number with a different scale. toString() can write an exponent for a very
-     * small price, such as 5.6366E-11. That is fine: CoinGecko sends numbers in the same form.
+     * Writes the price as a JSON number without quotes. [JsonPrimitive] is not used here. It can
+     * convert the value to Double and change the number. toString() keeps the scale, while
+     * toPlainString() would write 1E+3 as 1000. An exponent like 5.6366E-11 is fine, because
+     * CoinGecko sends numbers in the same form.
      */
     @OptIn(ExperimentalSerializationApi::class)
     override fun serialize(
