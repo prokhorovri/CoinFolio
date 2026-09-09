@@ -5,13 +5,13 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import me.prokhorov.coinfolio.domain.result.AppError
 import me.prokhorov.coinfolio.domain.result.Resource
-import me.prokhorov.coinfolio.domain.testing.FakePortfolioRepository
+import me.prokhorov.coinfolio.domain.testing.FakeHoldingRepository
 import me.prokhorov.coinfolio.domain.testing.createHolding
 import org.junit.Test
 
 class GetHoldingUseCaseTest {
 
-    private val repository = FakePortfolioRepository()
+    private val repository = FakeHoldingRepository()
     private val getHolding = GetHoldingUseCase(repository)
 
     @Test

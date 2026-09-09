@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import me.prokhorov.coinfolio.domain.model.Holding
-import me.prokhorov.coinfolio.domain.repository.PortfolioRepository
+import me.prokhorov.coinfolio.domain.repository.HoldingRepository
 import me.prokhorov.coinfolio.domain.result.AppError
 import me.prokhorov.coinfolio.domain.result.Resource
 
@@ -15,7 +15,7 @@ import me.prokhorov.coinfolio.domain.result.Resource
  * does. Set [error] to make every call fail. A read failure ends the flow, like the real code
  * in `:data` does with `catch`. A test can check that a caller subscribes again.
  */
-class FakePortfolioRepository : PortfolioRepository {
+class FakeHoldingRepository : HoldingRepository {
 
     private val holdings = MutableStateFlow<List<Holding>>(emptyList())
 

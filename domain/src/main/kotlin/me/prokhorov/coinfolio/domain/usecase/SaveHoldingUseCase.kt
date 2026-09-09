@@ -2,7 +2,7 @@ package me.prokhorov.coinfolio.domain.usecase
 
 import javax.inject.Inject
 import me.prokhorov.coinfolio.domain.model.Holding
-import me.prokhorov.coinfolio.domain.repository.PortfolioRepository
+import me.prokhorov.coinfolio.domain.repository.HoldingRepository
 import me.prokhorov.coinfolio.domain.result.Resource
 
 /**
@@ -10,7 +10,7 @@ import me.prokhorov.coinfolio.domain.result.Resource
  * A quantity of zero deletes the holding instead of storing a row with zero.
  */
 class SaveHoldingUseCase @Inject constructor(
-    private val repository: PortfolioRepository,
+    private val repository: HoldingRepository,
 ) {
     suspend operator fun invoke(holding: Holding): Resource<Unit> {
         return if (holding.quantity.signum() == 0) {

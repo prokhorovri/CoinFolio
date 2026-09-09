@@ -4,7 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import me.prokhorov.coinfolio.domain.model.Holding
 import me.prokhorov.coinfolio.domain.result.Resource
 
-interface PortfolioRepository {
+interface HoldingRepository {
     fun getHoldings(): Flow<Resource<List<Holding>>>
 
     /** Emits `null` when the coin is not held. That is not the same as a quantity of zero. */

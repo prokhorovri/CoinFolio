@@ -23,13 +23,13 @@ private const val COIN_ID = "bitcoin"
  * wrapping together, like the app does.
  */
 @RunWith(RobolectricTestRunner::class)
-class PortfolioRepositoryImplTest {
+class HoldingRepositoryImplTest {
 
     @get:Rule
     val databaseRule = InMemoryDatabaseRule()
 
-    private val repository: PortfolioRepositoryImpl by lazy {
-        PortfolioRepositoryImpl(HoldingLocalDataSource(databaseRule.holdingDao))
+    private val repository: HoldingRepositoryImpl by lazy {
+        HoldingRepositoryImpl(HoldingLocalDataSource(databaseRule.holdingDao))
     }
 
     @Test

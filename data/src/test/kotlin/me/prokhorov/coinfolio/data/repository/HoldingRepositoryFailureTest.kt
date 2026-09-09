@@ -28,14 +28,14 @@ private const val COIN_ID = "bitcoin"
  * `SQLException` with the stub `android.jar`.
  */
 @RunWith(RobolectricTestRunner::class)
-class PortfolioRepositoryFailureTest {
+class HoldingRepositoryFailureTest {
 
     private val storageError: suspend () -> Nothing = {
         throw SQLException("no space left on device")
     }
 
-    private fun createRepository(fail: suspend () -> Nothing): PortfolioRepositoryImpl {
-        return PortfolioRepositoryImpl(HoldingLocalDataSource(FailingHoldingDao(fail)))
+    private fun createRepository(fail: suspend () -> Nothing): HoldingRepositoryImpl {
+        return HoldingRepositoryImpl(HoldingLocalDataSource(FailingHoldingDao(fail)))
     }
 
     @Test

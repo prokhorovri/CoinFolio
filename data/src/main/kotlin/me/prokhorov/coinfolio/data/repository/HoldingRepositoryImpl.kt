@@ -10,12 +10,12 @@ import me.prokhorov.coinfolio.data.local.util.dbCall
 import me.prokhorov.coinfolio.data.mapper.toDomain
 import me.prokhorov.coinfolio.data.mapper.toEntity
 import me.prokhorov.coinfolio.domain.model.Holding
-import me.prokhorov.coinfolio.domain.repository.PortfolioRepository
+import me.prokhorov.coinfolio.domain.repository.HoldingRepository
 import me.prokhorov.coinfolio.domain.result.Resource
 
-class PortfolioRepositoryImpl @Inject constructor(
+class HoldingRepositoryImpl @Inject constructor(
     private val holdingLocalDataSource: HoldingLocalDataSource,
-) : PortfolioRepository {
+) : HoldingRepository {
     override fun getHoldings(): Flow<Resource<List<Holding>>> {
         return holdingLocalDataSource
             .getHoldings()

@@ -9,7 +9,7 @@ import kotlinx.coroutines.test.runTest
 import me.prokhorov.coinfolio.domain.result.AppError
 import me.prokhorov.coinfolio.domain.result.Resource
 import me.prokhorov.coinfolio.domain.testing.FakeCoinRepository
-import me.prokhorov.coinfolio.domain.testing.FakePortfolioRepository
+import me.prokhorov.coinfolio.domain.testing.FakeHoldingRepository
 import me.prokhorov.coinfolio.domain.testing.createCoinDetail
 import me.prokhorov.coinfolio.domain.testing.createHolding
 import me.prokhorov.coinfolio.domain.usecase.GetCoinDetailUseCase
@@ -40,13 +40,13 @@ class CoinDetailViewModelTest {
     val localeRule = DefaultLocaleRule(Locale.US)
 
     private val coinRepository = FakeCoinRepository()
-    private val portfolioRepository = FakePortfolioRepository()
+    private val holdingRepository = FakeHoldingRepository()
 
     private fun viewModel(): CoinDetailViewModel {
         return CoinDetailViewModel(
             getCoinDetailUseCase = GetCoinDetailUseCase(coinRepository),
-            getHoldingUseCase = GetHoldingUseCase(portfolioRepository),
-            saveHoldingUseCase = SaveHoldingUseCase(portfolioRepository),
+            getHoldingUseCase = GetHoldingUseCase(holdingRepository),
+            saveHoldingUseCase = SaveHoldingUseCase(holdingRepository),
             savedStateHandle = SavedStateHandle(mapOf("id" to COIN_ID)),
         )
     }
@@ -100,7 +100,7 @@ class CoinDetailViewModelTest {
     @Test
     fun `the stored holding fills the field`() = runTest {
         makeCoinAvailable()
-        portfolioRepository.saveHolding(createHolding(COIN_ID, "2.5"))
+        holdingRepository.saveHolding(createHolding(COIN_ID, "2.5"))
 
         val state = viewModel().state.value
 
@@ -126,7 +126,7 @@ class CoinDetailViewModelTest {
         val viewModel = viewModel()
 
         viewModel.onIntent(CoinDetailIntent.QuantityChanged("7"))
-        portfolioRepository.saveHolding(createHolding(COIN_ID, "2.5"))
+        holdingRepository.saveHolding(createHolding(COIN_ID, "2.5"))
 
         val state = viewModel.state.value
         assertThat(state.quantityInput).isEqualTo("7")
@@ -213,7 +213,7 @@ class CoinDetailViewModelTest {
     @Test
     fun `saving zero clears the holding`() = runTest {
         makeCoinAvailable()
-        portfolioRepository.saveHolding(createHolding(COIN_ID, "2.5"))
+        holdingRepository.saveHolding(createHolding(COIN_ID, "2.5"))
         val viewModel = viewModel()
 
         viewModel.onIntent(CoinDetailIntent.QuantityChanged("0"))
@@ -227,7 +227,7 @@ class CoinDetailViewModelTest {
         makeCoinAvailable()
         val viewModel = viewModel()
         viewModel.onIntent(CoinDetailIntent.QuantityChanged("1.5"))
-        portfolioRepository.error = AppError.Storage
+        holdingRepository.error = AppError.Storage
 
         viewModel.effect.test {
             viewModel.onIntent(CoinDetailIntent.SaveHolding)
@@ -243,7 +243,7 @@ class CoinDetailViewModelTest {
     @Test
     fun `a read failure goes to holdingError`() {
         makeCoinAvailable()
-        portfolioRepository.error = AppError.Storage
+        holdingRepository.error = AppError.Storage
 
         val state = viewModel().state.value
 
@@ -258,11 +258,11 @@ class CoinDetailViewModelTest {
     @Test
     fun `a save after a read failure starts reading again`() {
         makeCoinAvailable()
-        portfolioRepository.error = AppError.Storage
+        holdingRepository.error = AppError.Storage
         val viewModel = viewModel()
         assertThat(viewModel.state.value.holdingError).isEqualTo(AppError.Storage)
 
-        portfolioRepository.error = null
+        holdingRepository.error = null
         viewModel.onIntent(CoinDetailIntent.QuantityChanged("1.5"))
         viewModel.onIntent(CoinDetailIntent.SaveHolding)
 

@@ -18,7 +18,7 @@ import java.math.BigDecimal
 import me.prokhorov.coinfolio.R
 import me.prokhorov.coinfolio.domain.result.Resource
 import me.prokhorov.coinfolio.domain.testing.FakeCoinRepository
-import me.prokhorov.coinfolio.domain.testing.FakePortfolioRepository
+import me.prokhorov.coinfolio.domain.testing.FakeHoldingRepository
 import me.prokhorov.coinfolio.domain.testing.createCoinDetail
 import me.prokhorov.coinfolio.domain.usecase.GetCoinDetailUseCase
 import me.prokhorov.coinfolio.domain.usecase.GetHoldingUseCase
@@ -53,7 +53,7 @@ class CoinDetailScreenTest {
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     private val coinRepository = FakeCoinRepository()
-    private val portfolioRepository = FakePortfolioRepository()
+    private val holdingRepository = FakeHoldingRepository()
 
     private var isBackClicked = false
 
@@ -61,8 +61,8 @@ class CoinDetailScreenTest {
         // Built outside setContent, so a recomposition cannot create a second one.
         val viewModel = CoinDetailViewModel(
             getCoinDetailUseCase = GetCoinDetailUseCase(coinRepository),
-            getHoldingUseCase = GetHoldingUseCase(portfolioRepository),
-            saveHoldingUseCase = SaveHoldingUseCase(portfolioRepository),
+            getHoldingUseCase = GetHoldingUseCase(holdingRepository),
+            saveHoldingUseCase = SaveHoldingUseCase(holdingRepository),
             savedStateHandle = SavedStateHandle(mapOf("id" to COIN_ID)),
         )
 

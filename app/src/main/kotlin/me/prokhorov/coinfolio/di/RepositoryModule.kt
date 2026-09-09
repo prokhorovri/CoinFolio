@@ -6,9 +6,9 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 import me.prokhorov.coinfolio.data.repository.CoinRepositoryImpl
-import me.prokhorov.coinfolio.data.repository.PortfolioRepositoryImpl
+import me.prokhorov.coinfolio.data.repository.HoldingRepositoryImpl
 import me.prokhorov.coinfolio.domain.repository.CoinRepository
-import me.prokhorov.coinfolio.domain.repository.PortfolioRepository
+import me.prokhorov.coinfolio.domain.repository.HoldingRepository
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -20,5 +20,5 @@ abstract class RepositoryModule {
 
     @Binds
     @Singleton
-    abstract fun bindPortfolioRepository(impl: PortfolioRepositoryImpl): PortfolioRepository
+    abstract fun bindHoldingRepository(impl: HoldingRepositoryImpl): HoldingRepository
 }
