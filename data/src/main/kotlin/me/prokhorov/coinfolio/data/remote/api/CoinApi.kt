@@ -17,6 +17,18 @@ interface CoinApi {
     ): List<CoinDto>
 
     /**
+     * The same endpoint as [getTopCoins], filtered by id. So one request covers every held coin,
+     * at any market cap rank. [ids] is a comma separated list and must not be empty. CoinGecko
+     * reads an empty value as "no filter". It then returns the whole market list.
+     */
+    @GET("coins/markets")
+    suspend fun getCoinsByIds(
+        @Query("ids") ids: String,
+        @Query("vs_currency") vsCurrency: String = "usd",
+        @Query("sparkline") sparkline: Boolean = false,
+    ): List<CoinDto>
+
+    /**
      * Without these flags the endpoint returns much more: every exchange ticker, and the
      * community and developer stats. That is a few hundred KB per call. The flags keep only
      * the market data that the detail screen shows.

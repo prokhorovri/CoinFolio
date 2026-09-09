@@ -17,6 +17,14 @@ class CoinRepositoryImpl @Inject constructor(
         return apiCall { remoteDataSource.getTopCoins().map(CoinDto::toDomain) }
     }
 
+    override suspend fun getCoinsByIds(ids: List<String>): Resource<List<Coin>> {
+        // An empty list would remove the filter. CoinGecko would then return the whole
+        // market. That request still counts toward the rate limit.
+        if (ids.isEmpty()) return Resource.Success(emptyList())
+
+        return apiCall { remoteDataSource.getCoinsByIds(ids).map(CoinDto::toDomain) }
+    }
+
     override suspend fun getCoinDetail(coinId: String): Resource<CoinDetail> {
         return apiCall { remoteDataSource.getCoinDetail(coinId).toDomain() }
     }
