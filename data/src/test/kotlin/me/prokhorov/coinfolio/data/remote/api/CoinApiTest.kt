@@ -51,6 +51,30 @@ class CoinApiTest {
     }
 
     @Test
+    fun `the coins by ids request puts every id in one query value`() = runTest {
+        server.enqueue(createJsonResponse(EMPTY_LIST_BODY))
+
+        server.createCoinApi().getCoinsByIds(ids = "bitcoin,ethereum")
+
+        val url = server.takeRequest().url
+        assertThat(url.encodedPath).isEqualTo("/coins/markets")
+        assertThat(url.queryParameter("ids")).isEqualTo("bitcoin,ethereum")
+    }
+
+    // The chart of the portfolio rows does not exist, so the sparkline data would be parsed
+    // and dropped. The top coins request asks for it on purpose, this one must not.
+    @Test
+    fun `the coins by ids request asks for no sparkline`() = runTest {
+        server.enqueue(createJsonResponse(EMPTY_LIST_BODY))
+
+        server.createCoinApi().getCoinsByIds(ids = "bitcoin")
+
+        val url = server.takeRequest().url
+        assertThat(url.queryParameter("vs_currency")).isEqualTo("usd")
+        assertThat(url.queryParameter("sparkline")).isEqualTo("false")
+    }
+
+    @Test
     fun `a markets response is read into the coin list`() = runTest {
         server.enqueue(createJsonResponse(MARKETS_RESPONSE))
 

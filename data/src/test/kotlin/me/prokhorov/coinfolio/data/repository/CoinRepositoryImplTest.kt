@@ -62,6 +62,25 @@ class CoinRepositoryImplTest {
 
     // A failed call also uses up the rate limit. So this case needs its own message on screen.
     @Test
+    fun `the coins of the given ids become a list of coins`() = runTest {
+        server.enqueue(createJsonResponse(MARKETS_RESPONSE))
+
+        val result = createRepository().getCoinsByIds(listOf("bitcoin"))
+
+        assertThat(result).isEqualTo(Resource.Success(listOf(bitcoin)))
+    }
+
+    // CoinGecko reads an empty `ids` as "no filter" and answers with the whole market. That
+    // answer is useless here, and the request still counts toward the rate limit.
+    @Test
+    fun `an empty list of ids sends no request`() = runTest {
+        val result = createRepository().getCoinsByIds(emptyList())
+
+        assertThat(result).isEqualTo(Resource.Success(emptyList<Any>()))
+        assertThat(server.requestCount).isEqualTo(0)
+    }
+
+    @Test
     fun `a 429 becomes a rate limited failure`() = runTest {
         server.enqueue(createErrorResponse(RATE_LIMITED_CODE))
 
