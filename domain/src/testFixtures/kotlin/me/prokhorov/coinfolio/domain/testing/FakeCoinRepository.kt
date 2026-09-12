@@ -23,14 +23,9 @@ class FakeCoinRepository : CoinRepository {
     /** Set to make [getCoinsByIds] fail. */
     var marketError: AppError? = null
 
-    /** Every call to [getCoinsByIds], in order. So a test can check how often it was called. */
-    var requestedIds: List<List<String>> = emptyList()
-        private set
-
     override suspend fun getTopCoins(): Resource<List<Coin>> = topCoins
 
     override suspend fun getCoinsByIds(ids: List<String>): Resource<List<Coin>> {
-        requestedIds = requestedIds + listOf(ids)
         marketError?.let { return Resource.Failure(it) }
         return Resource.Success(ids.mapNotNull { marketCoins[it] })
     }

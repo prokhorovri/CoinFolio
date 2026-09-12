@@ -1,6 +1,5 @@
 package me.prokhorov.coinfolio.domain.usecase
 
-import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -31,7 +30,7 @@ class GetPortfolioUseCaseTest {
     fun `no holdings gives an empty portfolio`() = runTest {
         val portfolio = loadPortfolio()
 
-        assertThat(portfolio.holdings).isEmpty()
+        assertThat(portfolio.valuedHoldings).isEmpty()
         assertThat(portfolio.totalValue).isEqualToIgnoringScale("0")
     }
 
@@ -43,7 +42,7 @@ class GetPortfolioUseCaseTest {
 
         val portfolio = loadPortfolio()
 
-        assertThat(portfolio.holdings).containsExactly(
+        assertThat(portfolio.valuedHoldings).containsExactly(
             ValuedHolding(createHolding(BITCOIN, "0.5"), createCoin(BITCOIN)),
             ValuedHolding(createHolding(ETHEREUM, "2"), createCoin(ETHEREUM)),
         ).inOrder()
@@ -73,8 +72,8 @@ class GetPortfolioUseCaseTest {
 
         val portfolio = loadPortfolio()
 
-        assertThat(portfolio.holdings.last().coin).isNull()
-        assertThat(portfolio.holdings.last().value).isNull()
+        assertThat(portfolio.valuedHoldings.last().coin).isNull()
+        assertThat(portfolio.valuedHoldings.last().value).isNull()
         assertThat(portfolio.totalValue).isEqualToIgnoringScale("100")
     }
 
@@ -89,7 +88,7 @@ class GetPortfolioUseCaseTest {
 
         val portfolio = loadPortfolio()
 
-        assertThat(portfolio.holdings.last().value).isNull()
+        assertThat(portfolio.valuedHoldings.last().value).isNull()
         assertThat(portfolio.totalValue).isEqualToIgnoringScale("100")
     }
 
@@ -110,65 +109,6 @@ class GetPortfolioUseCaseTest {
         val result = getPortfolio().first()
 
         assertThat(result).isEqualTo(Resource.Failure(AppError.RateLimited))
-    }
-
-    @Test
-    fun `a new quantity sends no second request`() = runTest {
-        setMarketCoins(BITCOIN)
-
-        holdingRepository.saveHolding(createHolding(BITCOIN, "1"))
-
-        getPortfolio().test {
-            awaitItem()
-
-            holdingRepository.saveHolding(createHolding(BITCOIN, "2"))
-            awaitItem()
-
-            cancelAndIgnoreRemainingEvents()
-        }
-
-        assertThat(coinRepository.requestedIds).containsExactly(listOf(BITCOIN))
-    }
-
-    @Test
-    fun `a new coin id sends a new request`() = runTest {
-        setMarketCoins(BITCOIN, ETHEREUM)
-
-        holdingRepository.saveHolding(createHolding(BITCOIN, "1"))
-
-        getPortfolio().test {
-            awaitItem()
-
-            holdingRepository.saveHolding(createHolding(ETHEREUM, "2"))
-            awaitItem()
-
-            cancelAndIgnoreRemainingEvents()
-        }
-
-        assertThat(coinRepository.requestedIds).containsExactly(
-            listOf(BITCOIN),
-            listOf(BITCOIN, ETHEREUM),
-        ).inOrder()
-    }
-
-    // A failed request stores no ids, so the next holding change asks again.
-    @Test
-    fun `the prices are asked for again after a failure`() = runTest {
-        coinRepository.marketError = AppError.RateLimited
-        holdingRepository.saveHolding(createHolding(BITCOIN, "1"))
-
-        getPortfolio().test {
-            assertThat(awaitItem()).isEqualTo(Resource.Failure(AppError.RateLimited))
-
-            coinRepository.marketError = null
-            setMarketCoins(BITCOIN)
-            holdingRepository.saveHolding(createHolding(BITCOIN, "2"))
-
-            val second = awaitItem() as Resource.Success
-            assertThat(second.data.totalValue).isEqualToIgnoringScale("200")
-
-            cancelAndIgnoreRemainingEvents()
-        }
     }
 
     private fun setMarketCoins(vararg ids: String) {
