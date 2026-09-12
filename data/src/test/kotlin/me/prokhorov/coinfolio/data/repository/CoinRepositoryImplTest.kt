@@ -3,8 +3,11 @@ package me.prokhorov.coinfolio.data.repository
 import com.google.common.truth.Truth.assertThat
 import java.math.BigDecimal
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TestTimeSource
 import kotlinx.coroutines.test.runTest
 import me.prokhorov.coinfolio.data.remote.CoinRemoteDataSource
+import me.prokhorov.coinfolio.data.remote.MarketCoinsCache
 import me.prokhorov.coinfolio.data.remote.api.CoinApi
 import me.prokhorov.coinfolio.data.testing.MARKETS_RESPONSE
 import me.prokhorov.coinfolio.data.testing.createCoinApi
@@ -22,6 +25,8 @@ private const val COIN_ID = "bitcoin"
 private const val RATE_LIMITED_CODE = 429
 private const val NOT_FOUND_CODE = 404
 private const val SERVER_ERROR_CODE = 500
+
+private val CACHE_VALID_FOR = 30.seconds
 
 private const val SHORT_READ_TIMEOUT_MILLIS = 100L
 private const val LATE_HEADERS_SECONDS = 1L
@@ -47,8 +52,11 @@ class CoinRepositoryImplTest {
 
     private val server get() = serverRule.server
 
+    private val timeSource = TestTimeSource()
+
+    // Each test builds its own repository, so each one starts with an empty cache.
     private fun createRepository(api: CoinApi = server.createCoinApi()): CoinRepositoryImpl {
-        return CoinRepositoryImpl(CoinRemoteDataSource(api))
+        return CoinRepositoryImpl(CoinRemoteDataSource(api), MarketCoinsCache(timeSource))
     }
 
     @Test
@@ -78,6 +86,58 @@ class CoinRepositoryImplTest {
 
         assertThat(result).isEqualTo(Resource.Success(emptyList<Any>()))
         assertThat(server.requestCount).isEqualTo(0)
+    }
+
+    // The portfolio asks again after every change of a holding. Without the cache each save
+    // would send a request, and CoinGecko allows about 5 to 15 requests per minute.
+    @Test
+    fun `the same ids twice send one request`() = runTest {
+        server.enqueue(createJsonResponse(MARKETS_RESPONSE))
+        val repository = createRepository()
+
+        val first = repository.getCoinsByIds(listOf("bitcoin"))
+        val second = repository.getCoinsByIds(listOf("bitcoin"))
+
+        assertThat(second).isEqualTo(first)
+        assertThat(server.requestCount).isEqualTo(1)
+    }
+
+    @Test
+    fun `other ids send a new request`() = runTest {
+        server.enqueue(createJsonResponse(MARKETS_RESPONSE))
+        server.enqueue(createJsonResponse(MARKETS_RESPONSE))
+        val repository = createRepository()
+
+        repository.getCoinsByIds(listOf("bitcoin"))
+        repository.getCoinsByIds(listOf("bitcoin", "ethereum"))
+
+        assertThat(server.requestCount).isEqualTo(2)
+    }
+
+    @Test
+    fun `the same ids after 30 seconds send a new request`() = runTest {
+        server.enqueue(createJsonResponse(MARKETS_RESPONSE))
+        server.enqueue(createJsonResponse(MARKETS_RESPONSE))
+        val repository = createRepository()
+
+        repository.getCoinsByIds(listOf("bitcoin"))
+        timeSource += CACHE_VALID_FOR
+        repository.getCoinsByIds(listOf("bitcoin"))
+
+        assertThat(server.requestCount).isEqualTo(2)
+    }
+
+    @Test
+    fun `a failed call is not stored`() = runTest {
+        server.enqueue(createErrorResponse(RATE_LIMITED_CODE))
+        server.enqueue(createJsonResponse(MARKETS_RESPONSE))
+        val repository = createRepository()
+
+        val failure = repository.getCoinsByIds(listOf("bitcoin"))
+        val second = repository.getCoinsByIds(listOf("bitcoin"))
+
+        assertThat(failure).isEqualTo(Resource.Failure(AppError.RateLimited))
+        assertThat(second).isEqualTo(Resource.Success(listOf(bitcoin)))
     }
 
     @Test

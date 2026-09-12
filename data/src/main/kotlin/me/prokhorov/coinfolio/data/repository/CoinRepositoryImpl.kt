@@ -3,6 +3,7 @@ package me.prokhorov.coinfolio.data.repository
 import javax.inject.Inject
 import me.prokhorov.coinfolio.data.mapper.toDomain
 import me.prokhorov.coinfolio.data.remote.CoinRemoteDataSource
+import me.prokhorov.coinfolio.data.remote.MarketCoinsCache
 import me.prokhorov.coinfolio.data.remote.dto.CoinDto
 import me.prokhorov.coinfolio.data.remote.util.apiCall
 import me.prokhorov.coinfolio.domain.model.Coin
@@ -12,6 +13,7 @@ import me.prokhorov.coinfolio.domain.result.Resource
 
 class CoinRepositoryImpl @Inject constructor(
     private val remoteDataSource: CoinRemoteDataSource,
+    private val marketCoinsCache: MarketCoinsCache,
 ) : CoinRepository {
     override suspend fun getTopCoins(): Resource<List<Coin>> {
         return apiCall { remoteDataSource.getTopCoins().map(CoinDto::toDomain) }
@@ -22,7 +24,13 @@ class CoinRepositoryImpl @Inject constructor(
         // market. That request still counts toward the rate limit.
         if (ids.isEmpty()) return Resource.Success(emptyList())
 
-        return apiCall { remoteDataSource.getCoinsByIds(ids).map(CoinDto::toDomain) }
+        marketCoinsCache.read(ids)?.let { return Resource.Success(it) }
+
+        val result = apiCall { remoteDataSource.getCoinsByIds(ids).map(CoinDto::toDomain) }
+        if (result is Resource.Success) {
+            marketCoinsCache.write(ids, result.data)
+        }
+        return result
     }
 
     override suspend fun getCoinDetail(coinId: String): Resource<CoinDetail> {
