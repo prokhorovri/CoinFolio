@@ -58,6 +58,17 @@ class HoldingDaoTest {
     }
 
     @Test
+    fun `holdings are read back sorted by coin id`() = runTest {
+        val solana = HoldingEntity(coinId = "solana", quantity = BigDecimal("3"))
+        val bitcoin = HoldingEntity(coinId = COIN_ID, quantity = BigDecimal("0.5"))
+
+        dao.upsertHolding(solana)
+        dao.upsertHolding(bitcoin)
+
+        assertThat(dao.getHoldings().first()).containsExactly(bitcoin, solana).inOrder()
+    }
+
+    @Test
     fun `a deleted holding is gone`() = runTest {
         dao.upsertHolding(HoldingEntity(coinId = COIN_ID, quantity = BigDecimal("0.5")))
 

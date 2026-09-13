@@ -8,7 +8,8 @@ import me.prokhorov.coinfolio.data.local.entity.HoldingEntity
 
 @Dao
 interface HoldingDao {
-    @Query("SELECT * FROM holdings")
+    // Without ORDER BY, SQLite may return the rows in any order, so they could jump after a write.
+    @Query("SELECT * FROM holdings ORDER BY coinId")
     fun getHoldings(): Flow<List<HoldingEntity>>
 
     @Query("SELECT * FROM holdings WHERE coinId = :coinId")
