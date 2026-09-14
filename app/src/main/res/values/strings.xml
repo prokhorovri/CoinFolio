@@ -8,6 +8,11 @@
     <string name="no_value_text">—</string>
     <!--endregion-->
 
+    <!--region Navigation bar-->
+    <string name="navigation_bar_coins_text">Coins</string>
+    <string name="navigation_bar_portfolio_text">Portfolio</string>
+    <!--endregion-->
+
     <!--region Errors-->
     <string name="network_error_text">Network error</string>
     <string name="server_error_text">Server error (%1$d)</string>

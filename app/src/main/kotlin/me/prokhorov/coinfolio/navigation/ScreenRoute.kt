@@ -7,5 +7,8 @@ sealed interface ScreenRoute {
     data object CoinList : ScreenRoute
 
     @Serializable
+    data object Portfolio : ScreenRoute
+
+    @Serializable
     data class CoinDetail(val id: String) : ScreenRoute
 }
