@@ -21,6 +21,13 @@
     <string name="coin_list_screen_empty_text">No coins to show</string>
     <!--endregion-->
 
+    <!--region Portfolio screen-->
+    <string name="portfolio_screen_empty_text">No holdings yet, add one from the coin list</string>
+    <string name="portfolio_screen_total_label_text">Total value</string>
+    <!-- Quantity and symbol of one row, for example "0.5 BTC". -->
+    <string name="portfolio_screen_quantity_text">%1$s %2$s</string>
+    <!--endregion-->
+
     <!--region Coin detail screen-->
     <string name="coin_detail_screen_rank_text">Rank #%1$d</string>
 
