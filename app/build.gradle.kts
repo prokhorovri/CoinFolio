@@ -141,6 +141,8 @@ dependencies {
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.truth)
+    // A test saves a holding into the fake before the screen opens. saveHolding is suspend.
+    androidTestImplementation(libs.kotlinx.coroutines.core)
     // Adds an empty activity to the debug app. A test shows one composable inside it.
     debugImplementation(libs.androidx.ui.test.manifest)
 }

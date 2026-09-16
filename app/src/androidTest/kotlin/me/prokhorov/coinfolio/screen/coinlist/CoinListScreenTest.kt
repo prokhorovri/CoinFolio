@@ -22,9 +22,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 private const val BITCOIN_ID = "bitcoin"
-
-// createCoin builds the symbol from the id: the first 3 letters, shown in upper case.
-private const val BITCOIN_SYMBOL = "BIT"
+private const val BITCOIN_SYMBOL = "btc"
 private const val BITCOIN_PRICE = "67000.55"
 private const val ETHEREUM_ID = "ethereum"
 
@@ -63,7 +61,7 @@ class CoinListScreenTest {
     fun shows_a_row_for_every_coin() {
         repository.topCoins = Resource.Success(
             listOf(
-                createCoin(BITCOIN_ID, price = BITCOIN_PRICE),
+                createCoin(BITCOIN_ID, BITCOIN_SYMBOL, price = BITCOIN_PRICE),
                 createCoin(ETHEREUM_ID),
             ),
         )
@@ -71,7 +69,7 @@ class CoinListScreenTest {
         showScreen()
 
         composeRule.onNodeWithText(BITCOIN_ID).assertIsDisplayed()
-        composeRule.onNodeWithText(BITCOIN_SYMBOL).assertIsDisplayed()
+        composeRule.onNodeWithText(BITCOIN_SYMBOL.uppercase()).assertIsDisplayed()
         composeRule.onNodeWithText(BigDecimal(BITCOIN_PRICE).formatAsUsd()).assertIsDisplayed()
         composeRule.onNodeWithText(ETHEREUM_ID).assertIsDisplayed()
     }

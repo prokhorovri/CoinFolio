@@ -30,9 +30,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 private const val COIN_ID = "bitcoin"
-
-// createCoinDetail takes the symbol from the id: the first 3 letters, in upper case.
-private const val COIN_SYMBOL = "BIT"
+private const val COIN_SYMBOL = "btc"
 private const val COIN_PRICE = "67000.55"
 
 // A whole number, so the locale of the emulator cannot break the test.
@@ -78,7 +76,7 @@ class CoinDetailScreenTest {
 
     private fun makeCoinAvailable() {
         coinRepository.coinDetails = mapOf(
-            COIN_ID to Resource.Success(createCoinDetail(COIN_ID, price = COIN_PRICE)),
+            COIN_ID to Resource.Success(createCoinDetail(COIN_ID, COIN_SYMBOL, price = COIN_PRICE)),
         )
     }
 
@@ -91,7 +89,7 @@ class CoinDetailScreenTest {
         showScreen()
 
         composeRule.onNodeWithText(COIN_ID).assertIsDisplayed()
-        composeRule.onNodeWithText(COIN_SYMBOL).assertIsDisplayed()
+        composeRule.onNodeWithText(COIN_SYMBOL.uppercase()).assertIsDisplayed()
         composeRule.onNodeWithText(BigDecimal(COIN_PRICE).formatAsUsd()).assertIsDisplayed()
     }
 
@@ -142,7 +140,7 @@ class CoinDetailScreenTest {
 
         composeRule.onNodeWithText(getString(R.string.coin_detail_screen_save_text)).performClick()
 
-        composeRule.onNodeWithText("$QUANTITY $COIN_SYMBOL").assertIsDisplayed()
+        composeRule.onNodeWithText("$QUANTITY ${COIN_SYMBOL.uppercase()}").assertIsDisplayed()
         composeRule
             .onNodeWithText(getString(R.string.coin_detail_screen_saved_text))
             .assertIsDisplayed()

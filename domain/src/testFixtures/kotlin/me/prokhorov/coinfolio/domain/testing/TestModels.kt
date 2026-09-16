@@ -7,18 +7,22 @@ import me.prokhorov.coinfolio.domain.model.Holding
 
 /** Short builders, so a test sets only the field it cares about. */
 
-fun createCoin(id: String, price: String = "100"): Coin = Coin(
+fun createCoin(id: String, symbol: String = id.take(3), price: String = "100"): Coin = Coin(
     id = id,
-    symbol = id.take(3),
+    symbol = symbol,
     name = id,
     imageUrl = "https://example.com/$id.png",
     currentPrice = BigDecimal(price),
     priceChangePercent24h = BigDecimal("1.5"),
 )
 
-fun createCoinDetail(id: String, price: String = "100"): CoinDetail = CoinDetail(
+fun createCoinDetail(
+    id: String,
+    symbol: String = id.take(3),
+    price: String = "100",
+): CoinDetail = CoinDetail(
     id = id,
-    symbol = id.take(3),
+    symbol = symbol,
     name = id,
     imageUrl = "https://example.com/$id.png",
     currentPrice = BigDecimal(price),
