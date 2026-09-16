@@ -16,6 +16,7 @@ import kotlinx.coroutines.launch
 import me.prokhorov.coinfolio.domain.model.Portfolio
 import me.prokhorov.coinfolio.domain.result.Resource
 import me.prokhorov.coinfolio.domain.usecase.GetPortfolioUseCase
+import timber.log.Timber
 
 @HiltViewModel
 class PortfolioViewModel @Inject constructor(
@@ -31,6 +32,7 @@ class PortfolioViewModel @Inject constructor(
     private var loadJob: Job? = null
 
     init {
+        Timber.tag("PortfolioViewModel").d("Initializing")
         onIntent(PortfolioIntent.LoadPortfolio)
     }
 

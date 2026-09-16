@@ -5,10 +5,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.add
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,6 +21,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -31,6 +36,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -46,6 +53,7 @@ import me.prokhorov.coinfolio.theme.Spacing12
 import me.prokhorov.coinfolio.theme.Spacing16
 import me.prokhorov.coinfolio.theme.TopFadeExtraHeight
 import me.prokhorov.coinfolio.theme.extendedColors
+import me.prokhorov.coinfolio.ui.LocalBottomBarHeight
 import me.prokhorov.coinfolio.util.asMessage
 import me.prokhorov.coinfolio.util.formatAsPercent
 import me.prokhorov.coinfolio.util.formatAsUsd
@@ -76,6 +84,7 @@ fun CoinListScreen(
     CoinListContent(
         state = state,
         snackbarHostState = snackbarHostState,
+        bottomBarHeight = LocalBottomBarHeight.current,
         onRetry = { viewModel.onIntent(CoinListIntent.LoadCoins) },
         onCoinClick = onCoinClick,
     )
@@ -85,11 +94,16 @@ fun CoinListScreen(
 private fun CoinListContent(
     state: CoinListUiState,
     snackbarHostState: SnackbarHostState,
+    bottomBarHeight: Dp,
     onRetry: () -> Unit,
     onCoinClick: (String) -> Unit,
 ) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        // Add space for the bottom bar so the last item is visible when scrolled to the bottom.
+        contentWindowInsets = ScaffoldDefaults.contentWindowInsets
+            .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)
+            .add(WindowInsets(bottom = bottomBarHeight)),
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
         when {
@@ -248,6 +262,7 @@ private fun CoinListContentPreview() {
                 ),
             ),
             snackbarHostState = remember { SnackbarHostState() },
+            bottomBarHeight = 0.dp,
             onRetry = {},
             onCoinClick = {},
         )

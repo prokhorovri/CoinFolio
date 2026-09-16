@@ -7,17 +7,23 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import me.prokhorov.coinfolio.screen.coindetail.CoinDetailScreen
 import me.prokhorov.coinfolio.screen.coinlist.CoinListScreen
+import me.prokhorov.coinfolio.screen.portfolio.PortfolioScreen
 
 @Composable
-fun AppNavGraph(
-    navController: NavHostController = rememberNavController(),
-) {
+fun AppNavGraph(navController: NavHostController = rememberNavController()) {
     NavHost(
         navController = navController,
         startDestination = ScreenRoute.CoinList,
     ) {
         composable<ScreenRoute.CoinList> {
             CoinListScreen(
+                onCoinClick = { coinId ->
+                    navController.navigate(ScreenRoute.CoinDetail(id = coinId))
+                },
+            )
+        }
+        composable<ScreenRoute.Portfolio> {
+            PortfolioScreen(
                 onCoinClick = { coinId ->
                     navController.navigate(ScreenRoute.CoinDetail(id = coinId))
                 },
