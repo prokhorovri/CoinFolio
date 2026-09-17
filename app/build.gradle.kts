@@ -143,6 +143,8 @@ dependencies {
     androidTestImplementation(libs.truth)
     // A test saves a holding into the fake before the screen opens. saveHolding is suspend.
     androidTestImplementation(libs.kotlinx.coroutines.core)
+    // The navigation test builds its own NavHost with empty destinations.
+    androidTestImplementation(libs.androidx.navigation.compose)
     // Adds an empty activity to the debug app. A test shows one composable inside it.
     debugImplementation(libs.androidx.ui.test.manifest)
 }
