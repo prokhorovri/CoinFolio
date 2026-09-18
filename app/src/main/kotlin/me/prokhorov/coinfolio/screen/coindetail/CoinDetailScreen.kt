@@ -130,6 +130,7 @@ private fun CoinDetailContent(
 ) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        containerColor = Color.Transparent,
         // The keyboard covers the bottom of the screen, so it has to be part of the insets.
         // Without it the Save button stays under the keyboard. A snackbar also opens behind it.
         contentWindowInsets = ScaffoldDefaults.contentWindowInsets.union(WindowInsets.ime),

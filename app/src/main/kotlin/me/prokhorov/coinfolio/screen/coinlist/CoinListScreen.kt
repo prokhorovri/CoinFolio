@@ -101,6 +101,7 @@ private fun CoinListContent(
 ) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        containerColor = Color.Transparent,
         // Add space for the bottom bar so the last item is visible when scrolled to the bottom.
         contentWindowInsets = ScaffoldDefaults.contentWindowInsets
             .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)

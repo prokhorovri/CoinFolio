@@ -6,7 +6,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -26,25 +25,24 @@ fun CoinFolioApp() {
     val appState = rememberCoinFolioAppState()
     val topLevelDestination = appState.currentTopLevelDestination
 
-    Surface(modifier = Modifier.fillMaxSize()) {
-        Scaffold(
-            // Every screen handles the window insets in its own Scaffold, so this one
-            // must not handle them again. Then innerPadding below is only the bar height.
-            contentWindowInsets = WindowInsets(0),
-            bottomBar = {
-                topLevelDestination?.let { destination ->
-                    CoinFolioNavigationBar(
-                        selected = destination,
-                        onDestinationClick = appState::navigateToTab,
-                    )
-                }
-            },
-        ) { innerPadding ->
-            CompositionLocalProvider(
-                LocalBottomBarHeight provides innerPadding.calculateBottomPadding(),
-            ) {
-                AppNavGraph(navController = appState.navController)
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        // Every screen handles the window insets in its own Scaffold, so this one
+        // must not handle them again. Then innerPadding below is only the bar height.
+        contentWindowInsets = WindowInsets(0),
+        bottomBar = {
+            topLevelDestination?.let { destination ->
+                CoinFolioNavigationBar(
+                    selected = destination,
+                    onDestinationClick = appState::navigateToTab,
+                )
             }
+        },
+    ) { innerPadding ->
+        CompositionLocalProvider(
+            LocalBottomBarHeight provides innerPadding.calculateBottomPadding(),
+        ) {
+            AppNavGraph(navController = appState.navController)
         }
     }
 }
