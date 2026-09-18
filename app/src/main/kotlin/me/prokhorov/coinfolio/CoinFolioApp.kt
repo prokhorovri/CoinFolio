@@ -1,6 +1,5 @@
 package me.prokhorov.coinfolio
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Icon
@@ -18,7 +17,6 @@ import me.prokhorov.coinfolio.navigation.AppNavGraph
 import me.prokhorov.coinfolio.navigation.TopLevelDestination
 import me.prokhorov.coinfolio.navigation.rememberCoinFolioAppState
 import me.prokhorov.coinfolio.ui.LocalBottomBarHeight
-import me.prokhorov.coinfolio.ui.overlay.TopFadeOverlay
 
 // This is the app root. MainActivity calls it once with the whole window.
 // So a modifier parameter would never be used.
@@ -29,28 +27,24 @@ fun CoinFolioApp() {
     val topLevelDestination = appState.currentTopLevelDestination
 
     Surface(modifier = Modifier.fillMaxSize()) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Scaffold(
-                // Every screen handles the window insets in its own Scaffold, so this one
-                // must not handle them again. Then innerPadding below is only the bar height.
-                contentWindowInsets = WindowInsets(0),
-                bottomBar = {
-                    topLevelDestination?.let { destination ->
-                        CoinFolioNavigationBar(
-                            selected = destination,
-                            onDestinationClick = appState::navigateToTab,
-                        )
-                    }
-                },
-            ) { innerPadding ->
-                CompositionLocalProvider(
-                    LocalBottomBarHeight provides innerPadding.calculateBottomPadding(),
-                ) {
-                    AppNavGraph(navController = appState.navController)
+        Scaffold(
+            // Every screen handles the window insets in its own Scaffold, so this one
+            // must not handle them again. Then innerPadding below is only the bar height.
+            contentWindowInsets = WindowInsets(0),
+            bottomBar = {
+                topLevelDestination?.let { destination ->
+                    CoinFolioNavigationBar(
+                        selected = destination,
+                        onDestinationClick = appState::navigateToTab,
+                    )
                 }
+            },
+        ) { innerPadding ->
+            CompositionLocalProvider(
+                LocalBottomBarHeight provides innerPadding.calculateBottomPadding(),
+            ) {
+                AppNavGraph(navController = appState.navController)
             }
-
-            TopFadeOverlay()
         }
     }
 }

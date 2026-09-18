@@ -54,6 +54,7 @@ import me.prokhorov.coinfolio.theme.Spacing16
 import me.prokhorov.coinfolio.theme.TopFadeExtraHeight
 import me.prokhorov.coinfolio.theme.extendedColors
 import me.prokhorov.coinfolio.ui.LocalBottomBarHeight
+import me.prokhorov.coinfolio.ui.overlay.TopFadeOverlay
 import me.prokhorov.coinfolio.util.asMessage
 import me.prokhorov.coinfolio.util.formatAsPercent
 import me.prokhorov.coinfolio.util.formatAsUsd
@@ -106,26 +107,32 @@ private fun CoinListContent(
             .add(WindowInsets(bottom = bottomBarHeight)),
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
-        when {
-            state.isLoading && state.coins.isEmpty() -> LoadingState(contentPadding = innerPadding)
+        Box(modifier = Modifier.fillMaxSize()) {
+            when {
+                state.isLoading && state.coins.isEmpty() -> {
+                    LoadingState(contentPadding = innerPadding)
+                }
 
-            state.coins.isEmpty() && state.error != null -> {
-                ErrorState(
-                    message = state.error.asMessage(),
-                    onRetry = onRetry,
-                    contentPadding = innerPadding,
-                )
+                state.coins.isEmpty() && state.error != null -> {
+                    ErrorState(
+                        message = state.error.asMessage(),
+                        onRetry = onRetry,
+                        contentPadding = innerPadding,
+                    )
+                }
+
+                state.coins.isEmpty() -> EmptyState(contentPadding = innerPadding)
+
+                else -> {
+                    CoinList(
+                        coins = state.coins,
+                        contentPadding = innerPadding,
+                        onCoinClick = onCoinClick,
+                    )
+                }
             }
 
-            state.coins.isEmpty() -> EmptyState(contentPadding = innerPadding)
-
-            else -> {
-                CoinList(
-                    coins = state.coins,
-                    contentPadding = innerPadding,
-                    onCoinClick = onCoinClick,
-                )
-            }
+            TopFadeOverlay()
         }
     }
 }
