@@ -2,6 +2,7 @@ package me.prokhorov.coinfolio.screen.coinlist
 
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.runTest
 import me.prokhorov.coinfolio.domain.result.AppError
 import me.prokhorov.coinfolio.domain.result.Resource
@@ -77,6 +78,69 @@ class CoinListViewModelTest {
         }
 
         val state = viewModel.state.value
+        assertThat(state.error).isNull()
+        assertThat(state.coins.map { it.id }).containsExactly("bitcoin")
+    }
+
+    // A pull keeps the rows visible. The full screen spinner belongs to the first load only.
+    @Test
+    fun `a refresh keeps the coins on screen while it runs`() = runTest {
+        repository.topCoins = Resource.Success(listOf(createCoin("bitcoin")))
+        val viewModel = viewModel()
+        repository.gate = CompletableDeferred()
+
+        viewModel.onIntent(CoinListIntent.RefreshCoins)
+
+        val state = viewModel.state.value
+        assertThat(state.isRefreshing).isTrue()
+        assertThat(state.isLoading).isFalse()
+        assertThat(state.coins.map { it.id }).containsExactly("bitcoin")
+    }
+
+    @Test
+    fun `a refresh shows the new coins when it ends`() = runTest {
+        repository.topCoins = Resource.Success(listOf(createCoin("bitcoin")))
+        val viewModel = viewModel()
+
+        repository.topCoins = Resource.Success(listOf(createCoin("ethereum")))
+        viewModel.onIntent(CoinListIntent.RefreshCoins)
+
+        val state = viewModel.state.value
+        assertThat(state.isRefreshing).isFalse()
+        assertThat(state.coins.map { it.id }).containsExactly("ethereum")
+    }
+
+    // Every request counts toward the rate limit, so a second pull must not send one more.
+    @Test
+    fun `a second refresh while one runs is dropped`() = runTest {
+        repository.topCoins = Resource.Success(listOf(createCoin("bitcoin")))
+        val viewModel = viewModel()
+        val gate = CompletableDeferred<Unit>()
+        repository.gate = gate
+
+        viewModel.onIntent(CoinListIntent.RefreshCoins)
+        repository.topCoins = Resource.Success(listOf(createCoin("ethereum")))
+        viewModel.onIntent(CoinListIntent.RefreshCoins)
+        gate.complete(Unit)
+
+        // Without the guard the second call would have read ethereum.
+        assertThat(viewModel.state.value.coins.map { it.id }).containsExactly("bitcoin")
+    }
+
+    @Test
+    fun `a failure during a refresh keeps the coins and goes to the effect`() = runTest {
+        repository.topCoins = Resource.Success(listOf(createCoin("bitcoin")))
+        val viewModel = viewModel()
+
+        viewModel.effect.test {
+            repository.topCoins = Resource.Failure(AppError.RateLimited)
+            viewModel.onIntent(CoinListIntent.RefreshCoins)
+
+            assertThat(awaitItem()).isEqualTo(CoinListEffect.ShowError(AppError.RateLimited))
+        }
+
+        val state = viewModel.state.value
+        assertThat(state.isRefreshing).isFalse()
         assertThat(state.error).isNull()
         assertThat(state.coins.map { it.id }).containsExactly("bitcoin")
     }

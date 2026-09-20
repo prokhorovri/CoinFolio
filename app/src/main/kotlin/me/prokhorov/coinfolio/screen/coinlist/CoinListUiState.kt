@@ -5,6 +5,7 @@ import me.prokhorov.coinfolio.domain.result.AppError
 
 data class CoinListUiState(
     val isLoading: Boolean = false,
+    val isRefreshing: Boolean = false,
     val coins: List<Coin> = emptyList(),
     val error: AppError? = null,
 )

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -26,13 +27,16 @@ class CoinListViewModel @Inject constructor(
     private val _effect = MutableSharedFlow<CoinListEffect>()
     val effect: SharedFlow<CoinListEffect> = _effect.asSharedFlow()
 
+    private var loadJob: Job? = null
+
     init {
         onIntent(CoinListIntent.LoadCoins)
     }
 
     fun onIntent(intent: CoinListIntent) {
         when (intent) {
-            is CoinListIntent.LoadCoins -> loadCoins()
+            is CoinListIntent.LoadCoins -> loadCoins(isRefreshing = false)
+            is CoinListIntent.RefreshCoins -> loadCoins(isRefreshing = true)
         }
     }
 
@@ -41,18 +45,26 @@ class CoinListViewModel @Inject constructor(
      * list is still empty the error fills the whole screen. It goes to the state, and a
      * snackbar would only repeat it.
      */
-    private fun loadCoins() {
-        viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, error = null) }
+    private fun loadCoins(isRefreshing: Boolean) {
+        // Every request counts toward the rate limit, so drop a second call while one runs.
+        if (loadJob?.isActive == true) return
+        loadJob = viewModelScope.launch {
+            _state.update {
+                it.copy(isLoading = !isRefreshing, isRefreshing = isRefreshing, error = null)
+            }
             when (val result = getTopCoinsUseCase()) {
                 is Resource.Success -> _state.update {
-                    it.copy(isLoading = false, coins = result.data)
+                    it.copy(isLoading = false, isRefreshing = false, coins = result.data)
                 }
 
                 is Resource.Failure -> {
                     val hasData = _state.value.coins.isNotEmpty()
                     _state.update {
-                        it.copy(isLoading = false, error = if (hasData) null else result.error)
+                        it.copy(
+                            isLoading = false,
+                            isRefreshing = false,
+                            error = if (hasData) null else result.error,
+                        )
                     }
                     if (hasData) {
                         _effect.emit(CoinListEffect.ShowError(result.error))
