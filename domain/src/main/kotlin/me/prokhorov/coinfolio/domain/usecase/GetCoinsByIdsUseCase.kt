@@ -8,7 +8,10 @@ import me.prokhorov.coinfolio.domain.result.Resource
 class GetCoinsByIdsUseCase @Inject constructor(
     private val repository: CoinRepository,
 ) {
-    suspend operator fun invoke(ids: List<String>): Resource<List<Coin>> {
-        return repository.getCoinsByIds(ids)
+    suspend operator fun invoke(
+        ids: List<String>,
+        forceRefresh: Boolean = false,
+    ): Resource<List<Coin>> {
+        return repository.getCoinsByIds(ids, forceRefresh)
     }
 }

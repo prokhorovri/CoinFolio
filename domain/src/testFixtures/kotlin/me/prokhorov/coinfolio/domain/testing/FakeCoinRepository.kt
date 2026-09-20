@@ -23,9 +23,17 @@ class FakeCoinRepository : CoinRepository {
     /** Set to make [getCoinsByIds] fail. */
     var marketError: AppError? = null
 
+    /** The `forceRefresh` value of the last [getCoinsByIds] call. */
+    var lastForceRefresh: Boolean? = null
+        private set
+
     override suspend fun getTopCoins(): Resource<List<Coin>> = topCoins
 
-    override suspend fun getCoinsByIds(ids: List<String>): Resource<List<Coin>> {
+    override suspend fun getCoinsByIds(
+        ids: List<String>,
+        forceRefresh: Boolean,
+    ): Resource<List<Coin>> {
+        lastForceRefresh = forceRefresh
         marketError?.let { return Resource.Failure(it) }
         return Resource.Success(ids.mapNotNull { marketCoins[it] })
     }
