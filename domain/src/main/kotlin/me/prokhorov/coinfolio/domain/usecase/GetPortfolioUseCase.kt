@@ -3,6 +3,7 @@ package me.prokhorov.coinfolio.domain.usecase
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.withIndex
 import me.prokhorov.coinfolio.domain.model.Coin
 import me.prokhorov.coinfolio.domain.model.Holding
 import me.prokhorov.coinfolio.domain.model.Portfolio
@@ -18,22 +19,34 @@ class GetPortfolioUseCase @Inject constructor(
     private val getHoldings: GetHoldingsUseCase,
     private val getCoinsByIds: GetCoinsByIdsUseCase,
 ) {
-    operator fun invoke(): Flow<Resource<Portfolio>> {
-        return getHoldings().map(::toPortfolio)
+    /**
+     * [forceRefresh] gets fresh prices directly from the source. It applies to the first
+     * result of this flow only. A pull calls this function again, so it gets fresh prices
+     * every time. A change of the holdings uses the same flow and does not.
+     */
+    operator fun invoke(forceRefresh: Boolean = false): Flow<Resource<Portfolio>> {
+        return getHoldings()
+            .withIndex()
+            .map { (index, holdings) -> toPortfolio(holdings, forceRefresh && index == 0) }
     }
 
     private suspend fun toPortfolio(
         holdingsResource: Resource<List<Holding>>,
+        forceRefresh: Boolean,
     ): Resource<Portfolio> {
         return when (holdingsResource) {
             is Resource.Failure -> holdingsResource
-            is Resource.Success -> addPrices(holdingsResource.data)
+            is Resource.Success -> addPrices(holdingsResource.data, forceRefresh)
         }
     }
 
     /** The market request happens here. One request covers every coin the user owns. */
-    private suspend fun addPrices(holdings: List<Holding>): Resource<Portfolio> {
-        return when (val coinsResource = getCoinsByIds(holdings.map(Holding::coinId))) {
+    private suspend fun addPrices(
+        holdings: List<Holding>,
+        forceRefresh: Boolean,
+    ): Resource<Portfolio> {
+        val ids = holdings.map(Holding::coinId)
+        return when (val coinsResource = getCoinsByIds(ids, forceRefresh)) {
             is Resource.Failure -> coinsResource
             is Resource.Success -> Resource.Success(buildPortfolio(holdings, coinsResource.data))
         }

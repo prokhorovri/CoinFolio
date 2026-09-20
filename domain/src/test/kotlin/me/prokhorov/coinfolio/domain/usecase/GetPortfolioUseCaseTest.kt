@@ -1,5 +1,6 @@
 package me.prokhorov.coinfolio.domain.usecase
 
+import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -109,6 +110,34 @@ class GetPortfolioUseCaseTest {
         val result = getPortfolio().first()
 
         assertThat(result).isEqualTo(Resource.Failure(AppError.RateLimited))
+    }
+
+    // The flow lives as long as the screen. A refresh should cost one request, so the later
+    // results, which come from a change of the holdings, must not ask for fresh prices again.
+    @Test
+    fun `a refresh asks for fresh prices only once`() = runTest {
+        setMarketCoins(BITCOIN)
+        holdingRepository.saveHolding(createHolding(BITCOIN, "1"))
+
+        getPortfolio(forceRefresh = true).test {
+            awaitItem()
+            assertThat(coinRepository.lastForceRefresh).isTrue()
+
+            holdingRepository.saveHolding(createHolding(BITCOIN, "2"))
+
+            awaitItem()
+            assertThat(coinRepository.lastForceRefresh).isFalse()
+        }
+    }
+
+    @Test
+    fun `a normal load does not ask for fresh prices`() = runTest {
+        setMarketCoins(BITCOIN)
+        holdingRepository.saveHolding(createHolding(BITCOIN, "1"))
+
+        getPortfolio().first()
+
+        assertThat(coinRepository.lastForceRefresh).isFalse()
     }
 
     private fun setMarketCoins(vararg ids: String) {
