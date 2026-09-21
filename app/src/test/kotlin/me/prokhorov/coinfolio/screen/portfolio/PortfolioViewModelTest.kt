@@ -2,6 +2,7 @@ package me.prokhorov.coinfolio.screen.portfolio
 
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.runTest
 import me.prokhorov.coinfolio.domain.result.AppError
 import me.prokhorov.coinfolio.domain.testing.FakeCoinRepository
@@ -115,6 +116,64 @@ class PortfolioViewModelTest {
         val state = viewModel.state.value
         assertThat(state.error).isNull()
         assertThat(state.portfolio.valuedHoldings).hasSize(1)
+    }
+
+    @Test
+    fun `a refresh asks for fresh prices`() = runTest {
+        holdingRepository.saveHolding(createHolding(BITCOIN, "2"))
+        coinRepository.marketCoins = mapOf(BITCOIN to createCoin(BITCOIN))
+        val viewModel = viewModel()
+
+        viewModel.onIntent(PortfolioIntent.RefreshPortfolio)
+
+        assertThat(coinRepository.lastForceRefresh).isTrue()
+    }
+
+    @Test
+    fun `a refresh keeps the rows on screen while it runs`() = runTest {
+        holdingRepository.saveHolding(createHolding(BITCOIN, "2"))
+        coinRepository.marketCoins = mapOf(BITCOIN to createCoin(BITCOIN))
+        val viewModel = viewModel()
+        coinRepository.gate = CompletableDeferred()
+
+        viewModel.onIntent(PortfolioIntent.RefreshPortfolio)
+
+        val state = viewModel.state.value
+        assertThat(state.isRefreshing).isTrue()
+        assertThat(state.isLoading).isFalse()
+        assertThat(state.portfolio.valuedHoldings).hasSize(1)
+    }
+
+    @Test
+    fun `a refresh shows the new prices when it ends`() = runTest {
+        holdingRepository.saveHolding(createHolding(BITCOIN, "2"))
+        coinRepository.marketCoins = mapOf(BITCOIN to createCoin(BITCOIN, price = "100"))
+        val viewModel = viewModel()
+
+        coinRepository.marketCoins = mapOf(BITCOIN to createCoin(BITCOIN, price = "200"))
+        viewModel.onIntent(PortfolioIntent.RefreshPortfolio)
+
+        val state = viewModel.state.value
+        assertThat(state.isRefreshing).isFalse()
+        assertThat(state.portfolio.totalValue).isEqualToIgnoringScale("400")
+    }
+
+    // Every request counts toward the rate limit, so a second pull must not send one more.
+    @Test
+    fun `a second refresh while one runs is dropped`() = runTest {
+        holdingRepository.saveHolding(createHolding(BITCOIN, "2"))
+        coinRepository.marketCoins = mapOf(BITCOIN to createCoin(BITCOIN, price = "100"))
+        val viewModel = viewModel()
+        val gate = CompletableDeferred<Unit>()
+        coinRepository.gate = gate
+
+        viewModel.onIntent(PortfolioIntent.RefreshPortfolio)
+        coinRepository.marketCoins = mapOf(BITCOIN to createCoin(BITCOIN, price = "300"))
+        viewModel.onIntent(PortfolioIntent.RefreshPortfolio)
+        gate.complete(Unit)
+
+        // Without the guard the second call would have used price 300. The total would be 600.
+        assertThat(viewModel.state.value.portfolio.totalValue).isEqualToIgnoringScale("200")
     }
 
     // The ViewModel keeps listening after the first load. A holding saved somewhere else shows up

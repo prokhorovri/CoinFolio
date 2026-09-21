@@ -38,7 +38,8 @@ class PortfolioViewModel @Inject constructor(
 
     fun onIntent(intent: PortfolioIntent) {
         when (intent) {
-            is PortfolioIntent.LoadPortfolio -> loadPortfolio()
+            is PortfolioIntent.LoadPortfolio -> loadPortfolio(isRefreshing = false)
+            is PortfolioIntent.RefreshPortfolio -> loadPortfolio(isRefreshing = true)
         }
     }
 
@@ -46,11 +47,21 @@ class PortfolioViewModel @Inject constructor(
      * A read failure ends the flow, so a retry needs a new collector. The old job is cancelled
      * first. A market failure does not end the flow, so two collectors could write the state.
      */
-    private fun loadPortfolio() {
+    private fun loadPortfolio(isRefreshing: Boolean) {
+        // The flow lives as long as the screen. So an active job does not mean a running
+        // request. Every request counts toward the rate limit, so drop a second pull.
+        if (isRefreshing && _state.value.isRefreshing) return
+
         loadJob?.cancel()
-        _state.update { it.copy(isLoading = true, error = null) }
+        _state.update {
+            it.copy(
+                isLoading = !isRefreshing,
+                isRefreshing = isRefreshing,
+                error = null,
+            )
+        }
         loadJob = viewModelScope.launch {
-            getPortfolioUseCase().collect(::reduce)
+            getPortfolioUseCase(forceRefresh = isRefreshing).collect(::reduce)
         }
     }
 
@@ -61,13 +72,22 @@ class PortfolioViewModel @Inject constructor(
     private suspend fun reduce(result: Resource<Portfolio>) {
         when (result) {
             is Resource.Success -> _state.update {
-                it.copy(isLoading = false, portfolio = result.data, error = null)
+                it.copy(
+                    isLoading = false,
+                    isRefreshing = false,
+                    portfolio = result.data,
+                    error = null,
+                )
             }
 
             is Resource.Failure -> {
                 val hasRows = _state.value.portfolio.valuedHoldings.isNotEmpty()
                 _state.update {
-                    it.copy(isLoading = false, error = if (hasRows) null else result.error)
+                    it.copy(
+                        isLoading = false,
+                        isRefreshing = false,
+                        error = if (hasRows) null else result.error,
+                    )
                 }
                 if (hasRows) {
                     _effect.emit(PortfolioEffect.ShowError(result.error))
