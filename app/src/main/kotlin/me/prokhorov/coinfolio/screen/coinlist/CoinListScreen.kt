@@ -27,7 +27,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -57,6 +56,7 @@ import me.prokhorov.coinfolio.theme.Spacing12
 import me.prokhorov.coinfolio.theme.Spacing16
 import me.prokhorov.coinfolio.theme.TopFadeExtraHeight
 import me.prokhorov.coinfolio.theme.extendedColors
+import me.prokhorov.coinfolio.ui.FadingPullToRefreshIndicator
 import me.prokhorov.coinfolio.ui.LocalBottomBarHeight
 import me.prokhorov.coinfolio.ui.overlay.TopFadeOverlay
 import me.prokhorov.coinfolio.util.asMessage
@@ -124,7 +124,7 @@ private fun CoinListContent(
             state = pullToRefreshState,
             indicator = {
                 // The list scrolls under the status bar, so the indicator starts below it.
-                PullToRefreshDefaults.Indicator(
+                FadingPullToRefreshIndicator(
                     state = pullToRefreshState,
                     isRefreshing = state.isRefreshing,
                     modifier = Modifier
