@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import me.prokhorov.coinfolio.domain.model.Coin
 import me.prokhorov.coinfolio.domain.result.Resource
 import me.prokhorov.coinfolio.domain.usecase.GetTopCoinsUseCase
 
@@ -37,6 +38,13 @@ class CoinListViewModel @Inject constructor(
         when (intent) {
             is CoinListIntent.LoadCoins -> loadCoins(isRefreshing = false)
             is CoinListIntent.RefreshCoins -> loadCoins(isRefreshing = true)
+            is CoinListIntent.ChangeQuery -> changeQuery(intent.query)
+        }
+    }
+
+    private fun changeQuery(query: String) {
+        _state.update {
+            it.copy(query = query, filteredCoins = filterCoins(it.coins, query))
         }
     }
 
@@ -54,7 +62,12 @@ class CoinListViewModel @Inject constructor(
             }
             when (val result = getTopCoinsUseCase()) {
                 is Resource.Success -> _state.update {
-                    it.copy(isLoading = false, isRefreshing = false, coins = result.data)
+                    it.copy(
+                        isLoading = false,
+                        isRefreshing = false,
+                        coins = result.data,
+                        filteredCoins = filterCoins(result.data, it.query),
+                    )
                 }
 
                 is Resource.Failure -> {
@@ -71,6 +84,18 @@ class CoinListViewModel @Inject constructor(
                     }
                 }
             }
+        }
+    }
+
+    private fun filterCoins(coins: List<Coin>, query: String): List<Coin> {
+        val text = query.trim()
+        if (text.isEmpty()) return coins
+
+        return coins.filter { coin ->
+            val name = coin.name
+            val symbol = coin.symbol
+
+            name.contains(text, ignoreCase = true) || symbol.contains(text, ignoreCase = true)
         }
     }
 }

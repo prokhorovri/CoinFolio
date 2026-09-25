@@ -8,4 +8,6 @@ data class CoinListUiState(
     val isRefreshing: Boolean = false,
     val coins: List<Coin> = emptyList(),
     val error: AppError? = null,
+    val query: String = "",
+    val filteredCoins: List<Coin> = emptyList(),
 )
