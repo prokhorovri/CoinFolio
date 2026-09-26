@@ -50,7 +50,7 @@ class PortfolioViewModelTest {
     }
 
     @Test
-    fun `an empty portfolio is a success, not an error`() = runTest {
+    fun `an empty portfolio is a success, not an error`() {
         val state = viewModel().state.value
 
         assertThat(state.portfolio.valuedHoldings).isEmpty()
@@ -74,7 +74,7 @@ class PortfolioViewModelTest {
     // A read failure ends the holdings flow, so this error also stops the updates. The screen is
     // still empty, so it shows the error and a retry button.
     @Test
-    fun `a storage failure with no rows goes to the state`() = runTest {
+    fun `a storage failure with no rows goes to the state`() {
         holdingRepository.error = AppError.Storage
 
         val state = viewModel().state.value
