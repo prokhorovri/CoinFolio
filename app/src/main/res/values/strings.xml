@@ -5,6 +5,7 @@
     <!--region Common-->
     <string name="retry_text">Retry</string>
     <string name="back_text">Back</string>
+    <string name="clear_text">Clear</string>
     <string name="no_value_text">—</string>
     <!--endregion-->
 
@@ -24,6 +25,8 @@
 
     <!--region Coin list screen-->
     <string name="coin_list_screen_empty_text">No coins to show</string>
+    <string name="coin_list_screen_search_hint_text">Search coins</string>
+    <string name="coin_list_screen_not_found_text">No coins match \"%1$s\"</string>
     <!--endregion-->
 
     <!--region Portfolio screen-->
