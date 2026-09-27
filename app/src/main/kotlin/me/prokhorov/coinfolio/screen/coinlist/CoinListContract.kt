@@ -4,6 +4,10 @@ import me.prokhorov.coinfolio.domain.result.AppError
 
 sealed interface CoinListIntent {
     data object LoadCoins : CoinListIntent
+
+    data object RefreshCoins : CoinListIntent
+
+    data class ChangeQuery(val query: String) : CoinListIntent
 }
 
 sealed interface CoinListEffect {

@@ -20,12 +20,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -57,6 +60,7 @@ import me.prokhorov.coinfolio.theme.Spacing12
 import me.prokhorov.coinfolio.theme.Spacing16
 import me.prokhorov.coinfolio.theme.Spacing24
 import me.prokhorov.coinfolio.theme.TopFadeExtraHeight
+import me.prokhorov.coinfolio.ui.FadingPullToRefreshIndicator
 import me.prokhorov.coinfolio.ui.LocalBottomBarHeight
 import me.prokhorov.coinfolio.ui.overlay.TopFadeOverlay
 import me.prokhorov.coinfolio.util.asMessage
@@ -93,19 +97,23 @@ fun PortfolioScreen(
         snackbarHostState = snackbarHostState,
         bottomBarHeight = LocalBottomBarHeight.current,
         onRetry = { viewModel.onIntent(PortfolioIntent.LoadPortfolio) },
+        onRefresh = { viewModel.onIntent(PortfolioIntent.RefreshPortfolio) },
         onCoinClick = onCoinClick,
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PortfolioContent(
     state: PortfolioUiState,
     snackbarHostState: SnackbarHostState,
     bottomBarHeight: Dp,
     onRetry: () -> Unit,
+    onRefresh: () -> Unit,
     onCoinClick: (String) -> Unit,
 ) {
     val rows = state.portfolio.valuedHoldings
+    val pullToRefreshState = rememberPullToRefreshState()
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -116,7 +124,22 @@ private fun PortfolioContent(
             .add(WindowInsets(bottom = bottomBarHeight)),
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize()) {
+        PullToRefreshBox(
+            isRefreshing = state.isRefreshing,
+            onRefresh = onRefresh,
+            modifier = Modifier.fillMaxSize(),
+            state = pullToRefreshState,
+            indicator = {
+                // The list scrolls under the status bar, so the indicator starts below it.
+                FadingPullToRefreshIndicator(
+                    state = pullToRefreshState,
+                    isRefreshing = state.isRefreshing,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = innerPadding.calculateTopPadding()),
+                )
+            },
+        ) {
             when {
                 state.isLoading && rows.isEmpty() -> LoadingState(contentPadding = innerPadding)
 
@@ -319,6 +342,7 @@ private fun PortfolioContentPreview() {
             snackbarHostState = remember { SnackbarHostState() },
             bottomBarHeight = 0.dp,
             onRetry = {},
+            onRefresh = {},
             onCoinClick = {},
         )
     }

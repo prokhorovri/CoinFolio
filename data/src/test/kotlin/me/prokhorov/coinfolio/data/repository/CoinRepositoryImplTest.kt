@@ -127,6 +127,32 @@ class CoinRepositoryImplTest {
         assertThat(server.requestCount).isEqualTo(2)
     }
 
+    // Pull to refresh. The user asked for the price of this moment, so a stored answer from a
+    // few seconds ago is not what they want.
+    @Test
+    fun `a refresh sends a request inside the cache window`() = runTest {
+        server.enqueue(createJsonResponse(MARKETS_RESPONSE))
+        server.enqueue(createJsonResponse(MARKETS_RESPONSE))
+        val repository = createRepository()
+
+        repository.getCoinsByIds(listOf("bitcoin"))
+        repository.getCoinsByIds(listOf("bitcoin"), forceRefresh = true)
+
+        assertThat(server.requestCount).isEqualTo(2)
+    }
+
+    @Test
+    fun `a refresh stores its answer for the next call`() = runTest {
+        server.enqueue(createJsonResponse(MARKETS_RESPONSE))
+        val repository = createRepository()
+
+        repository.getCoinsByIds(listOf("bitcoin"), forceRefresh = true)
+        val second = repository.getCoinsByIds(listOf("bitcoin"))
+
+        assertThat(second).isEqualTo(Resource.Success(listOf(bitcoin)))
+        assertThat(server.requestCount).isEqualTo(1)
+    }
+
     @Test
     fun `a failed call is not stored`() = runTest {
         server.enqueue(createErrorResponse(RATE_LIMITED_CODE))

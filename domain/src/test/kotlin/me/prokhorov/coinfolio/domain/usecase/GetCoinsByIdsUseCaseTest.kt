@@ -35,6 +35,20 @@ class GetCoinsByIdsUseCaseTest {
     }
 
     @Test
+    fun `a caller can ask for fresh data`() = runTest {
+        getCoinsByIds(listOf("bitcoin"), forceRefresh = true)
+
+        assertThat(repository.lastForceRefresh).isTrue()
+    }
+
+    @Test
+    fun `a normal call does not ask for fresh data`() = runTest {
+        getCoinsByIds(listOf("bitcoin"))
+
+        assertThat(repository.lastForceRefresh).isFalse()
+    }
+
+    @Test
     fun `a failure keeps its error`() = runTest {
         repository.marketError = AppError.RateLimited
 

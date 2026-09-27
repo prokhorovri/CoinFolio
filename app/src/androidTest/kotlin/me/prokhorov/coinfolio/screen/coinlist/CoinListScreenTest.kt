@@ -2,10 +2,19 @@ package me.prokhorov.coinfolio.screen.coinlist
 
 import androidx.activity.ComponentActivity
 import androidx.annotation.StringRes
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.isFocused
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performImeAction
+import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeUp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import java.math.BigDecimal
@@ -56,6 +65,8 @@ class CoinListScreenTest {
     }
 
     private fun getString(@StringRes id: Int): String = composeRule.activity.getString(id)
+
+    private fun searchField() = composeRule.onNode(hasSetTextAction())
 
     @Test
     fun shows_a_row_for_every_coin() {
@@ -120,5 +131,57 @@ class CoinListScreenTest {
         composeRule.onNodeWithText(getString(R.string.retry_text)).performClick()
 
         composeRule.onNodeWithText(BITCOIN_ID).assertIsDisplayed()
+    }
+
+    @Test
+    fun a_query_shows_only_the_matching_coins() {
+        repository.topCoins = Resource.Success(
+            listOf(
+                createCoin(BITCOIN_ID),
+                createCoin(ETHEREUM_ID),
+            ),
+        )
+        showScreen()
+
+        searchField().performTextInput("bitc")
+
+        composeRule.onNodeWithText(BITCOIN_ID).assertIsDisplayed()
+        composeRule.onAllNodesWithText(ETHEREUM_ID).assertCountEquals(0)
+    }
+
+    // The field stays on screen next to the message, so the user can fix the query.
+    @Test
+    fun a_query_with_no_match_shows_the_not_found_message() {
+        repository.topCoins = Resource.Success(listOf(createCoin(BITCOIN_ID)))
+        showScreen()
+
+        searchField().performTextInput("xyz")
+
+        val message = composeRule.activity
+            .getString(R.string.coin_list_screen_not_found_text, "xyz")
+        composeRule.onNodeWithText(message).assertIsDisplayed()
+        searchField().assertIsDisplayed()
+    }
+
+    @Test
+    fun the_search_key_clears_the_focus() {
+        repository.topCoins = Resource.Success(listOf(createCoin(BITCOIN_ID)))
+        showScreen()
+        searchField().performTextInput("bitc")
+
+        searchField().performImeAction()
+
+        composeRule.onAllNodes(isFocused()).assertCountEquals(0)
+    }
+
+    @Test
+    fun a_scroll_clears_the_focus() {
+        repository.topCoins = Resource.Success(List(30) { createCoin("coin$it") })
+        showScreen()
+        searchField().performTextInput("coin")
+
+        composeRule.onNode(hasScrollAction()).performTouchInput { swipeUp() }
+
+        composeRule.onAllNodes(isFocused()).assertCountEquals(0)
     }
 }

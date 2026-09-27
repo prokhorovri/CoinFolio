@@ -1,5 +1,6 @@
 package me.prokhorov.coinfolio.domain.testing
 
+import kotlinx.coroutines.CompletableDeferred
 import me.prokhorov.coinfolio.domain.model.Coin
 import me.prokhorov.coinfolio.domain.model.CoinDetail
 import me.prokhorov.coinfolio.domain.repository.CoinRepository
@@ -23,11 +24,34 @@ class FakeCoinRepository : CoinRepository {
     /** Set to make [getCoinsByIds] fail. */
     var marketError: AppError? = null
 
-    override suspend fun getTopCoins(): Resource<List<Coin>> = topCoins
+    /** The `forceRefresh` value of the last [getCoinsByIds] call. */
+    var lastForceRefresh: Boolean? = null
+        private set
 
-    override suspend fun getCoinsByIds(ids: List<String>): Resource<List<Coin>> {
-        marketError?.let { return Resource.Failure(it) }
-        return Resource.Success(ids.mapNotNull { marketCoins[it] })
+    /**
+     * Set this to pause every market call until the test completes it. A call reads its answer
+     * before the pause. So a test can change the data and see which call used the old one.
+     */
+    var gate: CompletableDeferred<Unit>? = null
+
+    override suspend fun getTopCoins(): Resource<List<Coin>> {
+        val answer = topCoins
+        gate?.await()
+        return answer
+    }
+
+    override suspend fun getCoinsByIds(
+        ids: List<String>,
+        forceRefresh: Boolean,
+    ): Resource<List<Coin>> {
+        lastForceRefresh = forceRefresh
+
+        val failure = marketError?.let { Resource.Failure(it) }
+        val answer = failure ?: Resource.Success(ids.mapNotNull { marketCoins[it] })
+
+        gate?.await()
+
+        return answer
     }
 
     override suspend fun getCoinDetail(coinId: String): Resource<CoinDetail> {
