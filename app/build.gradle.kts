@@ -74,6 +74,7 @@ dependencies {
 
     // AndroidX
     implementation(libs.androidx.annotation)
+    implementation(libs.androidx.core.splashscreen)
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.core)

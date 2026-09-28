@@ -7,12 +7,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import dagger.hilt.android.AndroidEntryPoint
 import me.prokhorov.coinfolio.theme.CoinFolioTheme
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Must run before super.onCreate. It swaps the splash theme for Theme.CoinFolio.
+        // see https://developer.android.com/develop/ui/views/launch/splash-screen/migrate
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         // The dark or light choice is read once, so a theme change must recreate the activity.
         // Do not add uiMode to android:configChanges. The bar icons would keep the old color.

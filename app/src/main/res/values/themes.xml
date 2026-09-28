@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Shown while the app starts. installSplashScreen() in MainActivity then switches the
+         activity to postSplashScreenTheme. The IconBackground parent is needed for API 28 to 30:
+         with the plain Theme.SplashScreen, the teal circle is drawn only on API 31 and up. -->
+    <style name="Theme.CoinFolio.Starting" parent="Theme.SplashScreen.IconBackground">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/brand_teal</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.CoinFolio</item>
+    </style>
+
     <!-- Paints the window behind Compose. The dark version is in values-night. -->
     <style name="Theme.CoinFolio" parent="android:Theme.Material.Light.NoActionBar" />
 </resources>

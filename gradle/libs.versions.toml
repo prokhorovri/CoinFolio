@@ -6,6 +6,7 @@ ksp = "2.3.10"
 
 # AndroidX
 annotation = "1.10.0"
+splashscreen = "1.2.0"
 
 # Compose
 composeBom = "2026.06.01"
@@ -82,6 +83,7 @@ androidx-room-compiler = { group = "androidx.room", name = "room-compiler", vers
 
 # AndroidX
 androidx-annotation = { group = "androidx.annotation", name = "annotation", version.ref = "annotation" }
+androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "splashscreen" }
 
 # Compose
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
