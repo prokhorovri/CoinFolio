@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand colors for the launcher and splash icons.
+         Screens use ColorScheme from Theme.kt. -->
+    <color name="brand_teal">#FF0B6E62</color>
+    <color name="brand_cream">#FFFCEFC7</color>
+    <color name="brand_gold">#FFF2B705</color>
+</resources>
