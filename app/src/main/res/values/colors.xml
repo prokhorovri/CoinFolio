@@ -7,6 +7,6 @@
     <color name="brand_gold">#FFF2B705</color>
 
     <!-- Splash screen background. It must match `background` of the light ColorScheme in
-         Theme.kt, because XML cannot read Kotlin colors. -->
+         Theme.kt, because XML cannot read Kotlin colors. SplashBackgroundColorTest checks it. -->
     <color name="splash_background">#FFF4FBF8</color>
 </resources>

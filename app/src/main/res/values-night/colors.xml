@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Splash screen background. It must match `background` of the dark ColorScheme in
-         Theme.kt, because XML cannot read Kotlin colors. -->
+         Theme.kt, because XML cannot read Kotlin colors. SplashBackgroundColorTest checks it. -->
     <color name="splash_background">#FF0E1513</color>
 </resources>
