@@ -1,5 +1,6 @@
 package me.prokhorov.coinfolio.theme
 
+import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -8,7 +9,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 
-private val LightColorScheme = lightColorScheme(
+@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+internal val LightColorScheme = lightColorScheme(
     primary = Teal40,
     onPrimary = Color.White,
     primaryContainer = Teal90,
@@ -46,7 +48,8 @@ private val LightColorScheme = lightColorScheme(
     onErrorContainer = Red30,
 )
 
-private val DarkColorScheme = darkColorScheme(
+@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+internal val DarkColorScheme = darkColorScheme(
     primary = Teal80,
     onPrimary = Teal20,
     primaryContainer = Teal30,

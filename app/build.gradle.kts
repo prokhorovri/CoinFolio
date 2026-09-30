@@ -63,13 +63,6 @@ android {
             }
         }
     }
-
-    // The shared Lint setup lives in the coinfolio.android.lint convention plugin.
-    // This module has only one exception.
-    lint {
-        // The launcher icon comes later. Drop this line when it is added.
-        disable += "MissingApplicationIcon"
-    }
 }
 
 dependencies {
@@ -81,6 +74,7 @@ dependencies {
 
     // AndroidX
     implementation(libs.androidx.annotation)
+    implementation(libs.androidx.core.splashscreen)
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.core)

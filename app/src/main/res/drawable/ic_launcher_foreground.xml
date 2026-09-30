@@ -1,0 +1,20 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Folder -->
+    <path
+        android:fillColor="@color/brand_cream"
+        android:pathData="M36,48H47L50,51H72A3,3 0,0 1,75 54V56H33V51A3,3 0,0 1,36 48Z" />
+    <path
+        android:fillColor="@color/brand_cream"
+        android:pathData="M33,58H75V75A3,3 0,0 1,72 78H36A3,3 0,0 1,33 75Z" />
+    <!-- Coin -->
+    <path
+        android:fillColor="@color/brand_gold"
+        android:fillType="evenOdd"
+        android:pathData="M52,39a10,10 0,1 0,20 0a10,10 0,1 0,-20 0Z
+            M54.5,39a7.5,7.5 0,1 0,15 0a7.5,7.5 0,1 0,-15 0Z
+            M56,39a6,6 0,1 0,12 0a6,6 0,1 0,-12 0Z" />
+</vector>
