@@ -10,8 +10,7 @@ plugins {
 
 android {
     namespace = "me.prokhorov.coinfolio"
-    compileSdk = 36
-    compileSdkMinor = 1
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "me.prokhorov.coinfolio"
