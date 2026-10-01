@@ -94,6 +94,10 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
 
+    // Haze
+    implementation(libs.haze)
+    implementation(libs.haze.blur)
+
     // DI
     implementation(libs.javax.inject)
 
