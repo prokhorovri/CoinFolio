@@ -56,13 +56,14 @@ import me.prokhorov.coinfolio.domain.model.Portfolio
 import me.prokhorov.coinfolio.domain.model.ValuedHolding
 import me.prokhorov.coinfolio.theme.CoinFolioTheme
 import me.prokhorov.coinfolio.theme.CoinIconSize
+import me.prokhorov.coinfolio.theme.FadeExtraHeight
 import me.prokhorov.coinfolio.theme.Spacing12
 import me.prokhorov.coinfolio.theme.Spacing16
 import me.prokhorov.coinfolio.theme.Spacing24
-import me.prokhorov.coinfolio.theme.TopFadeExtraHeight
 import me.prokhorov.coinfolio.ui.FadingPullToRefreshIndicator
 import me.prokhorov.coinfolio.ui.LocalBottomBarHeight
-import me.prokhorov.coinfolio.ui.overlay.TopFadeOverlay
+import me.prokhorov.coinfolio.ui.overlay.EdgeFadeOverlay
+import me.prokhorov.coinfolio.ui.overlay.FadeEdge
 import me.prokhorov.coinfolio.util.asMessage
 import me.prokhorov.coinfolio.util.formatAsQuantity
 import me.prokhorov.coinfolio.util.formatAsUsd
@@ -162,7 +163,7 @@ private fun PortfolioContent(
                 }
             }
 
-            TopFadeOverlay()
+            EdgeFadeOverlay(edge = FadeEdge.TOP)
         }
     }
 }
@@ -221,7 +222,7 @@ private fun HoldingList(
         contentPadding = PaddingValues(
             start = contentPadding.calculateStartPadding(layoutDirection),
             end = contentPadding.calculateEndPadding(layoutDirection),
-            top = contentPadding.calculateTopPadding() + TopFadeExtraHeight,
+            top = contentPadding.calculateTopPadding() + FadeExtraHeight,
             bottom = contentPadding.calculateBottomPadding() + Spacing16,
         ),
     ) {
