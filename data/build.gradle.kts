@@ -8,8 +8,7 @@ plugins {
 
 android {
     namespace = "me.prokhorov.coinfolio.data"
-    compileSdk = 36
-    compileSdkMinor = 1
+    compileSdk = 37
 
     defaultConfig {
         minSdk = 28
@@ -21,6 +20,9 @@ android {
     }
 
     testOptions {
+        // Without this, the tests use compileSdk 37, and Robolectric 4.16 cannot run 37.
+        // 36 is also the targetSdk of :app.
+        targetSdk = 36
         unitTests {
             isIncludeAndroidResources = true
         }

@@ -3,7 +3,7 @@ package me.prokhorov.coinfolio.theme
 import androidx.compose.ui.unit.dp
 
 // Role tokens, named for what they control.
-val TopFadeExtraHeight = 24.dp
+val FadeExtraHeight = 24.dp
 val CoinIconSize = 40.dp
 val CoinDetailIconSize = 64.dp
 

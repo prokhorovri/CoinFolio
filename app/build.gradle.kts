@@ -10,8 +10,7 @@ plugins {
 
 android {
     namespace = "me.prokhorov.coinfolio"
-    compileSdk = 36
-    compileSdkMinor = 1
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "me.prokhorov.coinfolio"
@@ -94,6 +93,10 @@ dependencies {
     // Coil
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
+
+    // Haze
+    implementation(libs.haze)
+    implementation(libs.haze.blur)
 
     // DI
     implementation(libs.javax.inject)

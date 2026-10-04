@@ -73,7 +73,8 @@ import me.prokhorov.coinfolio.theme.Spacing8
 import me.prokhorov.coinfolio.theme.extendedColors
 import me.prokhorov.coinfolio.ui.FadingPullToRefreshIndicator
 import me.prokhorov.coinfolio.ui.LocalBottomBarHeight
-import me.prokhorov.coinfolio.ui.overlay.TopFadeOverlay
+import me.prokhorov.coinfolio.ui.overlay.EdgeFadeOverlay
+import me.prokhorov.coinfolio.ui.overlay.FadeEdge
 import me.prokhorov.coinfolio.util.asMessage
 import me.prokhorov.coinfolio.util.formatAsPercent
 import me.prokhorov.coinfolio.util.formatAsUsd
@@ -178,7 +179,7 @@ private fun CoinListContent(
                 onCoinClick = onCoinClick,
             )
 
-            TopFadeOverlay()
+            EdgeFadeOverlay(edge = FadeEdge.TOP)
         }
     }
 }
