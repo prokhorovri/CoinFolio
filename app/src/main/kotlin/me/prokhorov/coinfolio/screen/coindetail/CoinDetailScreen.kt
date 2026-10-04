@@ -6,12 +6,20 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.add
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldLineLimits
@@ -44,6 +52,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -62,11 +71,14 @@ import me.prokhorov.coinfolio.domain.model.CoinDetail
 import me.prokhorov.coinfolio.domain.result.AppError
 import me.prokhorov.coinfolio.theme.CoinDetailIconSize
 import me.prokhorov.coinfolio.theme.CoinFolioTheme
+import me.prokhorov.coinfolio.theme.FadeExtraHeight
 import me.prokhorov.coinfolio.theme.Spacing16
 import me.prokhorov.coinfolio.theme.Spacing24
 import me.prokhorov.coinfolio.theme.Spacing4
 import me.prokhorov.coinfolio.theme.Spacing8
 import me.prokhorov.coinfolio.theme.extendedColors
+import me.prokhorov.coinfolio.ui.overlay.EdgeFadeOverlay
+import me.prokhorov.coinfolio.ui.overlay.FadeEdge
 import me.prokhorov.coinfolio.util.QuantityInput
 import me.prokhorov.coinfolio.util.asMessage
 import me.prokhorov.coinfolio.util.formatAsCompact
@@ -131,8 +143,7 @@ private fun CoinDetailContent(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = Color.Transparent,
-        // The keyboard covers the bottom of the screen, so it has to be part of the insets.
-        // Without it the Save button stays under the keyboard. A snackbar also opens behind it.
+        // Keeps the snackbar above the keyboard.
         contentWindowInsets = ScaffoldDefaults.contentWindowInsets.union(WindowInsets.ime),
         topBar = {
             TopAppBar(
@@ -162,17 +173,24 @@ private fun CoinDetailContent(
             state.coin == null -> LoadingState(contentPadding = innerPadding)
 
             else -> {
-                CoinDetailBody(
-                    coin = state.coin,
-                    quantityInput = state.quantityInput,
-                    quantityError = state.quantityError,
-                    savedQuantity = state.savedQuantity,
-                    holdingError = state.holdingError,
-                    canSave = state.canSave,
-                    contentPadding = innerPadding,
-                    onQuantityChange = onQuantityChange,
-                    onSaveClick = onSaveClick,
-                )
+                Box(modifier = Modifier.fillMaxSize()) {
+                    CoinDetailBody(
+                        coin = state.coin,
+                        quantityInput = state.quantityInput,
+                        quantityError = state.quantityError,
+                        savedQuantity = state.savedQuantity,
+                        holdingError = state.holdingError,
+                        canSave = state.canSave,
+                        contentPadding = innerPadding,
+                        onQuantityChange = onQuantityChange,
+                        onSaveClick = onSaveClick,
+                    )
+
+                    EdgeFadeOverlay(
+                        edge = FadeEdge.BOTTOM,
+                        modifier = Modifier.align(Alignment.BottomCenter),
+                    )
+                }
             }
         }
     }
@@ -219,11 +237,28 @@ private fun CoinDetailBody(
     onQuantityChange: (String) -> Unit,
     onSaveClick: () -> Unit,
 ) {
+    val layoutDirection = LocalLayoutDirection.current
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(contentPadding)
+            // No bottom padding here, so the content can scroll under the navigation bar.
+            .padding(
+                start = contentPadding.calculateStartPadding(layoutDirection),
+                top = contentPadding.calculateTopPadding(),
+                end = contentPadding.calculateEndPadding(layoutDirection),
+            )
+            // Stop the scroll area at the keyboard, so the text field stays visible.
+            .imePadding()
             .verticalScroll(rememberScrollState())
+            // Padding below this line is inside the scrolling content.
+            // Extra space at the end, so Save can scroll above the navigation bar and the fade.
+            // It becomes zero when the keyboard is open.
+            .windowInsetsPadding(
+                WindowInsets.navigationBars
+                    .add(WindowInsets(bottom = FadeExtraHeight))
+                    .only(WindowInsetsSides.Bottom),
+            )
             .padding(horizontal = Spacing16, vertical = Spacing24),
         verticalArrangement = Arrangement.spacedBy(Spacing16),
     ) {
