@@ -1,15 +1,27 @@
 package me.prokhorov.coinfolio
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.only
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailDefaults
+import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.adaptive.WindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
@@ -17,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.window.core.layout.WindowSizeClass
 import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.blur.HazeBlurStyle
@@ -25,7 +38,9 @@ import dev.chrisbanes.haze.blur.hazeBlur
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import me.prokhorov.coinfolio.navigation.AppNavGraph
+import me.prokhorov.coinfolio.navigation.NavigationType
 import me.prokhorov.coinfolio.navigation.TopLevelDestination
+import me.prokhorov.coinfolio.navigation.navigationType
 import me.prokhorov.coinfolio.navigation.rememberCoinFolioAppState
 import me.prokhorov.coinfolio.ui.LocalBottomBarHeight
 
@@ -36,10 +51,15 @@ private const val BOTTOM_BAR_TINT_ALPHA = 0.6f
 // So a modifier parameter would never be used.
 @Suppress("ModifierMissing")
 @Composable
-fun CoinFolioApp() {
+fun CoinFolioApp(windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfoV2()) {
     val appState = rememberCoinFolioAppState()
     val topLevelDestination = appState.currentTopLevelDestination
     val hazeState = rememberHazeState()
+    val navigationType = navigationType(
+        isTopLevel = topLevelDestination != null,
+        isWideWindow = windowAdaptiveInfo.windowSizeClass
+            .isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND),
+    )
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -47,20 +67,55 @@ fun CoinFolioApp() {
         // must not handle them again. Then innerPadding below is only the bar height.
         contentWindowInsets = WindowInsets(0),
         bottomBar = {
-            topLevelDestination?.let { destination ->
+            if (topLevelDestination != null && navigationType == NavigationType.BAR) {
                 CoinFolioNavigationBar(
-                    selected = destination,
+                    selected = topLevelDestination,
                     hazeState = hazeState,
                     onDestinationClick = appState::navigateToTab,
                 )
             }
         },
     ) { innerPadding ->
-        CompositionLocalProvider(
-            LocalBottomBarHeight provides innerPadding.calculateBottomPadding(),
-        ) {
-            Box(modifier = Modifier.fillMaxSize().hazeSource(hazeState)) {
-                AppNavGraph(navController = appState.navController)
+        val isRail = topLevelDestination != null && navigationType == NavigationType.RAIL
+
+        // With the rail there is no bottom bar. The list still needs space for the
+        // system navigation bar at the bottom.
+        val bottomBarHeight = if (isRail) {
+            WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+        } else {
+            innerPadding.calculateBottomPadding()
+        }
+
+        CompositionLocalProvider(LocalBottomBarHeight provides bottomBarHeight) {
+            // The nav graph stays at the same place in both layouts. Otherwise a rotation
+            // loses the saved state of the screens, like the scroll position.
+            Row(modifier = Modifier.fillMaxSize()) {
+                if (isRail) {
+                    CoinFolioNavigationRail(
+                        selected = topLevelDestination,
+                        onDestinationClick = appState::navigateToTab,
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        // The rail already keeps clear of the cutout and the system bar on
+                        // its side, so the screens must not add that space again.
+                        .then(
+                            if (isRail) {
+                                Modifier.consumeWindowInsets(
+                                    NavigationRailDefaults.windowInsets
+                                        .only(WindowInsetsSides.Start),
+                                )
+                            } else {
+                                Modifier
+                            },
+                        )
+                        .hazeSource(hazeState),
+                ) {
+                    AppNavGraph(navController = appState.navController)
+                }
             }
         }
     }
@@ -92,6 +147,25 @@ private fun CoinFolioNavigationBar(
     ) {
         TopLevelDestination.entries.forEach { destination ->
             NavigationBarItem(
+                selected = destination == selected,
+                onClick = { onDestinationClick(destination) },
+                icon = {
+                    Icon(painter = painterResource(destination.iconRes), contentDescription = null)
+                },
+                label = { Text(text = stringResource(destination.labelRes)) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun CoinFolioNavigationRail(
+    selected: TopLevelDestination,
+    onDestinationClick: (TopLevelDestination) -> Unit,
+) {
+    NavigationRail {
+        TopLevelDestination.entries.forEach { destination ->
+            NavigationRailItem(
                 selected = destination == selected,
                 onClick = { onDestinationClick(destination) },
                 icon = {

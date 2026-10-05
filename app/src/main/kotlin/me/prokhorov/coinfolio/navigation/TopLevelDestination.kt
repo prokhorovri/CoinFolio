@@ -5,7 +5,7 @@ import androidx.annotation.StringRes
 import me.prokhorov.coinfolio.R
 
 /**
- * The screens of the bottom bar. The order here is the order on screen.
+ * The screens of the bottom bar and the navigation rail. The order here is the order on screen.
  */
 enum class TopLevelDestination(
     val route: ScreenRoute,

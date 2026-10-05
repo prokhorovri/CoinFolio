@@ -90,6 +90,10 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     debugImplementation(libs.androidx.ui.tooling)
 
+    // Adaptive
+    implementation(libs.androidx.material3.adaptive)
+    implementation(libs.androidx.window.core)
+
     // Coil
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
