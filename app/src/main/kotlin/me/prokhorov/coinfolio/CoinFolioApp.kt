@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowSizeClass
 import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.HazeState
@@ -53,13 +54,13 @@ private const val BOTTOM_BAR_TINT_ALPHA = 0.6f
 @Composable
 fun CoinFolioApp(windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfoV2()) {
     val appState = rememberCoinFolioAppState()
-    val topLevelDestination = appState.currentTopLevelDestination
     val hazeState = rememberHazeState()
     val navigationType = navigationType(
-        isTopLevel = topLevelDestination != null,
+        topLevelDestination = appState.currentTopLevelDestination,
         isWideWindow = windowAdaptiveInfo.windowSizeClass
             .isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND),
     )
+    val hasRail = navigationType is NavigationType.Rail
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -67,32 +68,34 @@ fun CoinFolioApp(windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveI
         // must not handle them again. Then innerPadding below is only the bar height.
         contentWindowInsets = WindowInsets(0),
         bottomBar = {
-            if (topLevelDestination != null && navigationType == NavigationType.BAR) {
+            if (navigationType is NavigationType.Bar) {
                 CoinFolioNavigationBar(
-                    selected = topLevelDestination,
+                    selected = navigationType.selected,
                     hazeState = hazeState,
                     onDestinationClick = appState::navigateToTab,
                 )
             }
         },
     ) { innerPadding ->
-        val isRail = topLevelDestination != null && navigationType == NavigationType.RAIL
+        val bottomBarHeight = when (navigationType) {
+            is NavigationType.Bar -> innerPadding.calculateBottomPadding()
 
-        // With the rail there is no bottom bar. The list still needs space for the
-        // system navigation bar at the bottom.
-        val bottomBarHeight = if (isRail) {
-            WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-        } else {
-            innerPadding.calculateBottomPadding()
+            // With the rail there is no bottom bar. The list still needs space for the
+            // system navigation bar at the bottom.
+            is NavigationType.Rail -> {
+                WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+            }
+
+            NavigationType.None -> 0.dp
         }
 
         CompositionLocalProvider(LocalBottomBarHeight provides bottomBarHeight) {
-            // The nav graph stays at the same place in both layouts. Otherwise a rotation
-            // loses the saved state of the screens, like the scroll position.
+            // The nav graph is at the same place in both layouts. So the screens keep
+            // their saved state, like the scroll position, after a rotation.
             Row(modifier = Modifier.fillMaxSize()) {
-                if (isRail) {
+                if (hasRail) {
                     CoinFolioNavigationRail(
-                        selected = topLevelDestination,
+                        selected = navigationType.selected,
                         onDestinationClick = appState::navigateToTab,
                     )
                 }
@@ -100,10 +103,10 @@ fun CoinFolioApp(windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveI
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        // The rail already keeps clear of the cutout and the system bar on
-                        // its side, so the screens must not add that space again.
+                        // The rail already adds space for the cutout and the system bar.
+                        // So the screens don't add it again.
                         .then(
-                            if (isRail) {
+                            if (hasRail) {
                                 Modifier.consumeWindowInsets(
                                     NavigationRailDefaults.windowInsets
                                         .only(WindowInsetsSides.Start),

@@ -6,25 +6,31 @@ import org.junit.Test
 class NavigationTypeTest {
 
     @Test
-    fun `a tab in a narrow window shows the bottom bar`() {
-        val type = navigationType(isTopLevel = true, isWideWindow = false)
+    fun `a tab in a narrow window shows the bottom bar with that tab selected`() {
+        val type = navigationType(
+            topLevelDestination = TopLevelDestination.PORTFOLIO,
+            isWideWindow = false,
+        )
 
-        assertThat(type).isEqualTo(NavigationType.BAR)
+        assertThat(type).isEqualTo(NavigationType.Bar(TopLevelDestination.PORTFOLIO))
     }
 
     @Test
-    fun `a tab in a wide window shows the rail`() {
-        val type = navigationType(isTopLevel = true, isWideWindow = true)
+    fun `a tab in a wide window shows the rail with that tab selected`() {
+        val type = navigationType(
+            topLevelDestination = TopLevelDestination.PORTFOLIO,
+            isWideWindow = true,
+        )
 
-        assertThat(type).isEqualTo(NavigationType.RAIL)
+        assertThat(type).isEqualTo(NavigationType.Rail(TopLevelDestination.PORTFOLIO))
     }
 
     @Test
     fun `a screen with no tab shows no navigation in any window`() {
-        val narrow = navigationType(isTopLevel = false, isWideWindow = false)
-        val wide = navigationType(isTopLevel = false, isWideWindow = true)
+        val narrow = navigationType(topLevelDestination = null, isWideWindow = false)
+        val wide = navigationType(topLevelDestination = null, isWideWindow = true)
 
-        assertThat(narrow).isEqualTo(NavigationType.NONE)
-        assertThat(wide).isEqualTo(NavigationType.NONE)
+        assertThat(narrow).isEqualTo(NavigationType.None)
+        assertThat(wide).isEqualTo(NavigationType.None)
     }
 }
