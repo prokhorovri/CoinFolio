@@ -1,5 +1,6 @@
 package me.prokhorov.coinfolio
 
+import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -27,8 +28,10 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowSizeClass
 import dev.chrisbanes.haze.HazeInput
@@ -43,10 +46,17 @@ import me.prokhorov.coinfolio.navigation.NavigationType
 import me.prokhorov.coinfolio.navigation.TopLevelDestination
 import me.prokhorov.coinfolio.navigation.navigationType
 import me.prokhorov.coinfolio.navigation.rememberCoinFolioAppState
+import me.prokhorov.coinfolio.theme.CoinFolioTheme
 import me.prokhorov.coinfolio.ui.LocalBottomBarHeight
 
 // Alpha of the bottom bar color over the blurred content.
 private const val BOTTOM_BAR_TINT_ALPHA = 0.6f
+
+@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+internal const val NAVIGATION_BAR_TAG = "navigation_bar"
+
+@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+internal const val NAVIGATION_RAIL_TAG = "navigation_rail"
 
 // This is the app root. MainActivity calls it once with the whole window.
 // So a modifier parameter would never be used.
@@ -54,12 +64,29 @@ private const val BOTTOM_BAR_TINT_ALPHA = 0.6f
 @Composable
 fun CoinFolioApp(windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfoV2()) {
     val appState = rememberCoinFolioAppState()
-    val hazeState = rememberHazeState()
     val navigationType = navigationType(
         topLevelDestination = appState.currentTopLevelDestination,
         isWideWindow = windowAdaptiveInfo.windowSizeClass
             .isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND),
     )
+
+    CoinFolioNavigationScaffold(
+        navigationType = navigationType,
+        onDestinationClick = appState::navigateToTab,
+    ) {
+        AppNavGraph(navController = appState.navController)
+    }
+}
+
+/** The bar or the rail around [content]. A test can pass simple content, with no Hilt. */
+@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+@Composable
+internal fun CoinFolioNavigationScaffold(
+    navigationType: NavigationType,
+    onDestinationClick: (TopLevelDestination) -> Unit,
+    content: @Composable () -> Unit,
+) {
+    val hazeState = rememberHazeState()
     val hasRail = navigationType is NavigationType.Rail
 
     Scaffold(
@@ -72,7 +99,7 @@ fun CoinFolioApp(windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveI
                 CoinFolioNavigationBar(
                     selected = navigationType.selected,
                     hazeState = hazeState,
-                    onDestinationClick = appState::navigateToTab,
+                    onDestinationClick = onDestinationClick,
                 )
             }
         },
@@ -96,7 +123,7 @@ fun CoinFolioApp(windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveI
                 if (hasRail) {
                     CoinFolioNavigationRail(
                         selected = navigationType.selected,
-                        onDestinationClick = appState::navigateToTab,
+                        onDestinationClick = onDestinationClick,
                     )
                 }
                 Box(
@@ -117,7 +144,7 @@ fun CoinFolioApp(windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveI
                         )
                         .hazeSource(hazeState),
                 ) {
-                    AppNavGraph(navController = appState.navController)
+                    content()
                 }
             }
         }
@@ -145,7 +172,9 @@ private fun CoinFolioNavigationBar(
     }
 
     NavigationBar(
-        modifier = Modifier.hazeBlur(input = HazeInput.Sources(hazeState), style = blurStyle),
+        modifier = Modifier
+            .testTag(NAVIGATION_BAR_TAG)
+            .hazeBlur(input = HazeInput.Sources(hazeState), style = blurStyle),
         containerColor = Color.Transparent,
     ) {
         TopLevelDestination.entries.forEach { destination ->
@@ -166,7 +195,7 @@ private fun CoinFolioNavigationRail(
     selected: TopLevelDestination,
     onDestinationClick: (TopLevelDestination) -> Unit,
 ) {
-    NavigationRail {
+    NavigationRail(modifier = Modifier.testTag(NAVIGATION_RAIL_TAG)) {
         TopLevelDestination.entries.forEach { destination ->
             NavigationRailItem(
                 selected = destination == selected,
@@ -177,5 +206,27 @@ private fun CoinFolioNavigationRail(
                 label = { Text(text = stringResource(destination.labelRes)) },
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun CoinFolioNavigationScaffoldBarPreview() {
+    CoinFolioTheme {
+        CoinFolioNavigationScaffold(
+            navigationType = NavigationType.Bar(TopLevelDestination.COINS),
+            onDestinationClick = {},
+        ) {}
+    }
+}
+
+@Preview(showBackground = true, widthDp = 853, heightDp = 400)
+@Composable
+private fun CoinFolioNavigationScaffoldRailPreview() {
+    CoinFolioTheme {
+        CoinFolioNavigationScaffold(
+            navigationType = NavigationType.Rail(TopLevelDestination.COINS),
+            onDestinationClick = {},
+        ) {}
     }
 }
