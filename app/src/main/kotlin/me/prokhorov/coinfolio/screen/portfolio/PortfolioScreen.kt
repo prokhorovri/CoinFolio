@@ -56,14 +56,12 @@ import me.prokhorov.coinfolio.domain.model.Portfolio
 import me.prokhorov.coinfolio.domain.model.ValuedHolding
 import me.prokhorov.coinfolio.theme.CoinFolioTheme
 import me.prokhorov.coinfolio.theme.CoinIconSize
-import me.prokhorov.coinfolio.theme.FadeExtraHeight
 import me.prokhorov.coinfolio.theme.Spacing12
 import me.prokhorov.coinfolio.theme.Spacing16
 import me.prokhorov.coinfolio.theme.Spacing24
 import me.prokhorov.coinfolio.ui.FadingPullToRefreshIndicator
 import me.prokhorov.coinfolio.ui.LocalBottomBarHeight
-import me.prokhorov.coinfolio.ui.overlay.EdgeFadeOverlay
-import me.prokhorov.coinfolio.ui.overlay.FadeEdge
+import me.prokhorov.coinfolio.ui.overlay.EdgeFadeBox
 import me.prokhorov.coinfolio.util.asMessage
 import me.prokhorov.coinfolio.util.formatAsQuantity
 import me.prokhorov.coinfolio.util.formatAsUsd
@@ -162,8 +160,6 @@ private fun PortfolioContent(
                     )
                 }
             }
-
-            EdgeFadeOverlay(edge = FadeEdge.TOP)
         }
     }
 }
@@ -217,23 +213,25 @@ private fun HoldingList(
 ) {
     val layoutDirection = LocalLayoutDirection.current
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(
-            start = contentPadding.calculateStartPadding(layoutDirection),
-            end = contentPadding.calculateEndPadding(layoutDirection),
-            top = contentPadding.calculateTopPadding() + FadeExtraHeight,
-            bottom = contentPadding.calculateBottomPadding() + Spacing16,
-        ),
-    ) {
-        item(key = TOTAL_HEADER_KEY) {
-            TotalValueHeader(total = portfolio.totalValue)
-        }
-        items(portfolio.valuedHoldings, key = { it.holding.coinId }) { valuedHolding ->
-            ValuedHoldingRow(
-                valuedHolding = valuedHolding,
-                onClick = { onCoinClick(valuedHolding.holding.coinId) },
-            )
+    EdgeFadeBox(contentPadding = contentPadding, hasTopFade = true) { fadePadding ->
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = fadePadding.calculateStartPadding(layoutDirection),
+                end = fadePadding.calculateEndPadding(layoutDirection),
+                top = fadePadding.calculateTopPadding(),
+                bottom = fadePadding.calculateBottomPadding() + Spacing16,
+            ),
+        ) {
+            item(key = TOTAL_HEADER_KEY) {
+                TotalValueHeader(total = portfolio.totalValue)
+            }
+            items(portfolio.valuedHoldings, key = { it.holding.coinId }) { valuedHolding ->
+                ValuedHoldingRow(
+                    valuedHolding = valuedHolding,
+                    onClick = { onCoinClick(valuedHolding.holding.coinId) },
+                )
+            }
         }
     }
 }

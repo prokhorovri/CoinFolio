@@ -6,6 +6,7 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -22,6 +23,7 @@ import me.prokhorov.coinfolio.domain.usecase.GetCoinsByIdsUseCase
 import me.prokhorov.coinfolio.domain.usecase.GetHoldingsUseCase
 import me.prokhorov.coinfolio.domain.usecase.GetPortfolioUseCase
 import me.prokhorov.coinfolio.theme.CoinFolioTheme
+import me.prokhorov.coinfolio.ui.overlay.TOP_FADE_TAG
 import me.prokhorov.coinfolio.util.formatAsUsd
 import org.junit.Rule
 import org.junit.Test
@@ -158,6 +160,24 @@ class PortfolioScreenTest {
         composeRule
             .onNodeWithText(getString(R.string.portfolio_screen_empty_text))
             .assertIsDisplayed()
+    }
+
+    @Test
+    fun the_list_has_a_top_fade() {
+        saveHolding(BITCOIN_ID, BITCOIN_QUANTITY)
+        makeCoinsAvailable()
+
+        showScreen()
+
+        composeRule.onNodeWithTag(TOP_FADE_TAG).assertExists()
+    }
+
+    // The fade is only for content that scrolls.
+    @Test
+    fun the_empty_state_has_no_top_fade() {
+        showScreen()
+
+        composeRule.onNodeWithTag(TOP_FADE_TAG).assertDoesNotExist()
     }
 
     // No rows yet, so the error takes the whole screen and offers a retry.
