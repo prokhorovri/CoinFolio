@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.add
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
@@ -73,8 +74,7 @@ import me.prokhorov.coinfolio.theme.Spacing8
 import me.prokhorov.coinfolio.theme.extendedColors
 import me.prokhorov.coinfolio.ui.FadingPullToRefreshIndicator
 import me.prokhorov.coinfolio.ui.LocalBottomBarHeight
-import me.prokhorov.coinfolio.ui.overlay.EdgeFadeOverlay
-import me.prokhorov.coinfolio.ui.overlay.FadeEdge
+import me.prokhorov.coinfolio.ui.overlay.EdgeFadeBox
 import me.prokhorov.coinfolio.util.asMessage
 import me.prokhorov.coinfolio.util.formatAsPercent
 import me.prokhorov.coinfolio.util.formatAsUsd
@@ -129,6 +129,10 @@ private fun CoinListContent(
     val pullToRefreshState = rememberPullToRefreshState()
     val focusManager = LocalFocusManager.current
 
+    // The Scaffold and search field use the same top insets
+    val topInsets = ScaffoldDefaults.contentWindowInsets
+        .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
@@ -142,20 +146,19 @@ private fun CoinListContent(
                     onQueryChange = onQueryChange,
                     onSearch = { focusManager.clearFocus() },
                     // With a top bar, Scaffold leaves the status bar to the bar itself.
-                    modifier = Modifier.windowInsetsPadding(
-                        ScaffoldDefaults.contentWindowInsets
-                            .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top),
-                    ),
+                    modifier = Modifier.windowInsetsPadding(topInsets),
                 )
             }
         },
         containerColor = Color.Transparent,
         // Add space for the bottom bar so the last item is visible when scrolled to the bottom.
-        contentWindowInsets = ScaffoldDefaults.contentWindowInsets
-            .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)
-            .add(WindowInsets(bottom = bottomBarHeight)),
+        contentWindowInsets = topInsets.add(WindowInsets(bottom = bottomBarHeight)),
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
+        // The top padding is the top insets plus the search field. Zero while there is no field.
+        val topBarHeight = innerPadding.calculateTopPadding() -
+            topInsets.asPaddingValues().calculateTopPadding()
+
         PullToRefreshBox(
             isRefreshing = state.isRefreshing,
             onRefresh = onRefresh,
@@ -175,11 +178,10 @@ private fun CoinListContent(
             CoinListBody(
                 state = state,
                 contentPadding = innerPadding,
+                topBarHeight = topBarHeight,
                 onRetry = onRetry,
                 onCoinClick = onCoinClick,
             )
-
-            EdgeFadeOverlay(edge = FadeEdge.TOP)
         }
     }
 }
@@ -189,6 +191,7 @@ private fun CoinListContent(
 private fun CoinListBody(
     state: CoinListUiState,
     contentPadding: PaddingValues,
+    topBarHeight: Dp,
     onRetry: () -> Unit,
     onCoinClick: (String) -> Unit,
 ) {
@@ -212,6 +215,7 @@ private fun CoinListBody(
                 coins = state.filteredCoins,
                 query = state.query,
                 contentPadding = contentPadding,
+                topBarHeight = topBarHeight,
                 onCoinClick = onCoinClick,
             )
         }
@@ -264,6 +268,7 @@ private fun CoinList(
     coins: List<Coin>,
     query: String,
     contentPadding: PaddingValues,
+    topBarHeight: Dp,
     onCoinClick: (String) -> Unit,
 ) {
     val layoutDirection = LocalLayoutDirection.current
@@ -278,31 +283,37 @@ private fun CoinList(
             }
     }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        state = listState,
-        contentPadding = PaddingValues(
-            start = contentPadding.calculateStartPadding(layoutDirection),
-            end = contentPadding.calculateEndPadding(layoutDirection),
-            top = contentPadding.calculateTopPadding(),
-            bottom = contentPadding.calculateBottomPadding() + Spacing16,
-        ),
-    ) {
-        // Keep the "not found" message as a list item so pull-to-refresh still works.
-        if (coins.isEmpty()) {
-            item(key = NOT_FOUND_KEY) {
-                NotFoundMessage(query = query.trim())
+    EdgeFadeBox(
+        contentPadding = contentPadding,
+        topBarHeight = topBarHeight,
+        hasTopFade = true,
+    ) { fadePadding ->
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            state = listState,
+            contentPadding = PaddingValues(
+                start = fadePadding.calculateStartPadding(layoutDirection),
+                end = fadePadding.calculateEndPadding(layoutDirection),
+                top = fadePadding.calculateTopPadding(),
+                bottom = fadePadding.calculateBottomPadding() + Spacing16,
+            ),
+        ) {
+            // Keep the "not found" message as a list item so pull-to-refresh still works.
+            if (coins.isEmpty()) {
+                item(key = NOT_FOUND_KEY) {
+                    NotFoundMessage(query = query.trim())
+                }
             }
-        }
 
-        items(coins, key = Coin::id) { coin ->
-            CoinRow(
-                coin = coin,
-                onClick = {
-                    focusManager.clearFocus()
-                    onCoinClick(coin.id)
-                },
-            )
+            items(coins, key = Coin::id) { coin ->
+                CoinRow(
+                    coin = coin,
+                    onClick = {
+                        focusManager.clearFocus()
+                        onCoinClick(coin.id)
+                    },
+                )
+            }
         }
     }
 }

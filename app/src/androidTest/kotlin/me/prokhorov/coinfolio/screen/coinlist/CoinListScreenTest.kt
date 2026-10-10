@@ -4,11 +4,13 @@ import androidx.activity.ComponentActivity
 import androidx.annotation.StringRes
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.isFocused
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
@@ -25,6 +27,7 @@ import me.prokhorov.coinfolio.domain.testing.FakeCoinRepository
 import me.prokhorov.coinfolio.domain.testing.createCoin
 import me.prokhorov.coinfolio.domain.usecase.GetTopCoinsUseCase
 import me.prokhorov.coinfolio.theme.CoinFolioTheme
+import me.prokhorov.coinfolio.ui.overlay.TOP_FADE_TAG
 import me.prokhorov.coinfolio.util.formatAsUsd
 import org.junit.Rule
 import org.junit.Test
@@ -109,6 +112,37 @@ class CoinListScreenTest {
         composeRule
             .onNodeWithText(getString(R.string.coin_list_screen_empty_text))
             .assertIsDisplayed()
+    }
+
+    @Test
+    fun the_list_has_a_top_fade() {
+        repository.topCoins = Resource.Success(listOf(createCoin(BITCOIN_ID)))
+
+        showScreen()
+
+        composeRule.onNodeWithTag(TOP_FADE_TAG).assertExists()
+    }
+
+    // At rest the first row is not under the fade.
+    @Test
+    fun the_top_fade_ends_above_the_first_row() {
+        repository.topCoins = Resource.Success(listOf(createCoin(BITCOIN_ID)))
+
+        showScreen()
+
+        val fadeBottom = composeRule.onNodeWithTag(TOP_FADE_TAG).getUnclippedBoundsInRoot().bottom
+        val rowTop = composeRule.onNodeWithText(BITCOIN_ID).getUnclippedBoundsInRoot().top
+        assertThat(fadeBottom.value).isAtMost(rowTop.value)
+    }
+
+    // The fade is only for content that scrolls.
+    @Test
+    fun the_empty_state_has_no_top_fade() {
+        repository.topCoins = Resource.Success(emptyList())
+
+        showScreen()
+
+        composeRule.onNodeWithTag(TOP_FADE_TAG).assertDoesNotExist()
     }
 
     // No coins yet, so the error takes the whole screen and offers a retry.
