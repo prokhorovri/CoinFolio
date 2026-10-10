@@ -34,6 +34,8 @@ private const val FADE_EXPONENT = 1.5f
 // How many color stops draw the curve. More stops make it smoother.
 private const val FADE_STEPS = 8
 
+private enum class FadeEdge { TOP, BOTTOM }
+
 /**
  * Fades the [content] at the top and/or bottom edge.
  * Adds padding, so the first and last items can scroll fully out of the fades.

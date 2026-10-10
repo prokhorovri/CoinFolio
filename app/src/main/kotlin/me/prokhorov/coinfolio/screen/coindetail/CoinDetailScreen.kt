@@ -6,20 +6,18 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.add
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.union
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldLineLimits
@@ -58,6 +56,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -71,14 +70,12 @@ import me.prokhorov.coinfolio.domain.model.CoinDetail
 import me.prokhorov.coinfolio.domain.result.AppError
 import me.prokhorov.coinfolio.theme.CoinDetailIconSize
 import me.prokhorov.coinfolio.theme.CoinFolioTheme
-import me.prokhorov.coinfolio.theme.FadeExtraHeight
 import me.prokhorov.coinfolio.theme.Spacing16
 import me.prokhorov.coinfolio.theme.Spacing24
 import me.prokhorov.coinfolio.theme.Spacing4
 import me.prokhorov.coinfolio.theme.Spacing8
 import me.prokhorov.coinfolio.theme.extendedColors
-import me.prokhorov.coinfolio.ui.overlay.EdgeFadeOverlay
-import me.prokhorov.coinfolio.ui.overlay.FadeEdge
+import me.prokhorov.coinfolio.ui.overlay.EdgeFadeBox
 import me.prokhorov.coinfolio.util.QuantityInput
 import me.prokhorov.coinfolio.util.asMessage
 import me.prokhorov.coinfolio.util.formatAsCompact
@@ -173,24 +170,17 @@ private fun CoinDetailContent(
             state.coin == null -> LoadingState(contentPadding = innerPadding)
 
             else -> {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    CoinDetailBody(
-                        coin = state.coin,
-                        quantityInput = state.quantityInput,
-                        quantityError = state.quantityError,
-                        savedQuantity = state.savedQuantity,
-                        holdingError = state.holdingError,
-                        canSave = state.canSave,
-                        contentPadding = innerPadding,
-                        onQuantityChange = onQuantityChange,
-                        onSaveClick = onSaveClick,
-                    )
-
-                    EdgeFadeOverlay(
-                        edge = FadeEdge.BOTTOM,
-                        modifier = Modifier.align(Alignment.BottomCenter),
-                    )
-                }
+                CoinDetailBody(
+                    coin = state.coin,
+                    quantityInput = state.quantityInput,
+                    quantityError = state.quantityError,
+                    savedQuantity = state.savedQuantity,
+                    holdingError = state.holdingError,
+                    canSave = state.canSave,
+                    contentPadding = innerPadding,
+                    onQuantityChange = onQuantityChange,
+                    onSaveClick = onSaveClick,
+                )
             }
         }
     }
@@ -238,44 +228,56 @@ private fun CoinDetailBody(
     onSaveClick: () -> Unit,
 ) {
     val layoutDirection = LocalLayoutDirection.current
+    // Checks the keyboard height, not its visibility. A floating keyboard covers no edge,
+    // so the fade stays.
+    val isKeyboardDocked = WindowInsets.ime.asPaddingValues().calculateBottomPadding() > 0.dp
 
-    Column(
+    // The part of the navigation bar that the keyboard does not cover. Zero when the keyboard
+    // is docked.
+    val navigationBarHeight = WindowInsets.navigationBars
+        .exclude(WindowInsets.ime)
+        .asPaddingValues()
+        .calculateBottomPadding()
+
+    EdgeFadeBox(
+        // The scroll area reaches the bottom of the screen.
+        // The content scrolls under the navigation bar.
         modifier = Modifier
-            .fillMaxSize()
-            // No bottom padding here, so the content can scroll under the navigation bar.
             .padding(
                 start = contentPadding.calculateStartPadding(layoutDirection),
                 top = contentPadding.calculateTopPadding(),
                 end = contentPadding.calculateEndPadding(layoutDirection),
             )
             // Stop the scroll area at the keyboard, so the text field stays visible.
-            .imePadding()
-            .verticalScroll(rememberScrollState())
-            // Padding below this line is inside the scrolling content.
-            // Extra space at the end, so Save can scroll above the navigation bar and the fade.
-            // It becomes zero when the keyboard is open.
-            .windowInsetsPadding(
-                WindowInsets.navigationBars
-                    .add(WindowInsets(bottom = FadeExtraHeight))
-                    .only(WindowInsetsSides.Bottom),
+            .imePadding(),
+        // Add space for the navigation bar so the last item can scroll above it.
+        contentPadding = PaddingValues(bottom = navigationBarHeight),
+        // No fade over the keyboard. The scroll area ends at its top.
+        hasBottomFade = !isKeyboardDocked,
+    ) { fadePadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(fadePadding)
+                .padding(horizontal = Spacing16, vertical = Spacing24),
+            verticalArrangement = Arrangement.spacedBy(Spacing16),
+        ) {
+            CoinSummary(coin = coin)
+            HorizontalDivider()
+            MarketDataSection(coin = coin)
+            HorizontalDivider()
+            HoldingSection(
+                symbol = coin.symbol,
+                quantityInput = quantityInput,
+                quantityError = quantityError,
+                savedQuantity = savedQuantity,
+                holdingError = holdingError,
+                canSave = canSave,
+                onQuantityChange = onQuantityChange,
+                onSaveClick = onSaveClick,
             )
-            .padding(horizontal = Spacing16, vertical = Spacing24),
-        verticalArrangement = Arrangement.spacedBy(Spacing16),
-    ) {
-        CoinSummary(coin = coin)
-        HorizontalDivider()
-        MarketDataSection(coin = coin)
-        HorizontalDivider()
-        HoldingSection(
-            symbol = coin.symbol,
-            quantityInput = quantityInput,
-            quantityError = quantityError,
-            savedQuantity = savedQuantity,
-            holdingError = holdingError,
-            canSave = canSave,
-            onQuantityChange = onQuantityChange,
-            onSaveClick = onSaveClick,
-        )
+        }
     }
 }
 

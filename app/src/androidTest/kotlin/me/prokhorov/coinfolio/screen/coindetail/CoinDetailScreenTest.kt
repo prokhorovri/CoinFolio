@@ -2,15 +2,25 @@ package me.prokhorov.coinfolio.screen.coindetail
 
 import androidx.activity.ComponentActivity
 import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.SemanticsActions.ScrollBy
+import androidx.compose.ui.semantics.SemanticsProperties.VerticalScrollAxisRange
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
@@ -24,6 +34,8 @@ import me.prokhorov.coinfolio.domain.usecase.GetCoinDetailUseCase
 import me.prokhorov.coinfolio.domain.usecase.GetHoldingUseCase
 import me.prokhorov.coinfolio.domain.usecase.SaveHoldingUseCase
 import me.prokhorov.coinfolio.theme.CoinFolioTheme
+import me.prokhorov.coinfolio.theme.Spacing24
+import me.prokhorov.coinfolio.ui.overlay.BOTTOM_FADE_TAG
 import me.prokhorov.coinfolio.util.formatAsUsd
 import org.junit.Rule
 import org.junit.Test
@@ -38,6 +50,9 @@ private const val QUANTITY = "2"
 
 // One digit over the limit. The field keeps the text, and the state shows the error.
 private const val TOO_LARGE_QUANTITY = "1234567890123456"
+
+// Shorter than the content, so the content must scroll.
+private val SHORT_SCREEN_HEIGHT = 300.dp
 
 /**
  * Shows the real screen with a real ViewModel over the fakes. The coin id comes from
@@ -55,7 +70,8 @@ class CoinDetailScreenTest {
 
     private var isBackClicked = false
 
-    private fun showScreen() {
+    // A short screen makes the content scroll on any test device.
+    private fun showScreen(height: Dp? = null) {
         // Built outside setContent, so a recomposition cannot create a second one.
         val viewModel = CoinDetailViewModel(
             getCoinDetailUseCase = GetCoinDetailUseCase(coinRepository),
@@ -66,10 +82,12 @@ class CoinDetailScreenTest {
 
         composeRule.setContent {
             CoinFolioTheme {
-                CoinDetailScreen(
-                    onBackClick = { isBackClicked = true },
-                    viewModel = viewModel,
-                )
+                Box(modifier = if (height != null) Modifier.height(height) else Modifier) {
+                    CoinDetailScreen(
+                        onBackClick = { isBackClicked = true },
+                        viewModel = viewModel,
+                    )
+                }
             }
         }
     }
@@ -144,6 +162,38 @@ class CoinDetailScreenTest {
         composeRule
             .onNodeWithText(getString(R.string.coin_detail_screen_saved_text))
             .assertIsDisplayed()
+    }
+
+    // The end of the content has room for the fade. So at the end, Save is not under it.
+    @Test
+    fun at_the_end_of_the_scroll_save_is_above_the_bottom_fade() {
+        makeCoinAvailable()
+        showScreen(height = SHORT_SCREEN_HEIGHT)
+
+        // Two nodes can scroll: the content and the quantity field (its text scrolls sideways).
+        // The quantity field is left out.
+        val content = composeRule.onNode(hasScrollAction() and !hasSetTextAction())
+        // Scrolls straight to the end on any screen size.
+        // Do not use swipeUp() here: after a swipe, composeRule.activity hung the test.
+        // Scrolls straight to the end.
+        val maxScroll = content.fetchSemanticsNode().config[VerticalScrollAxisRange].maxValue()
+        content.performSemanticsAction(ScrollBy) { scrollBy -> scrollBy(0f, maxScroll) }
+
+        val saveBottom = composeRule
+            .onNodeWithText(getString(R.string.coin_detail_screen_save_text))
+            .fetchSemanticsNode()
+            .boundsInRoot
+            .bottom
+        val fadeTop = composeRule
+            .onNodeWithTag(BOTTOM_FADE_TAG)
+            .fetchSemanticsNode()
+            .boundsInRoot
+            .top
+        // In pixels, the same unit the layout uses, so both sides are rounded the same way.
+        val columnPadding = with(composeRule.density) { Spacing24.roundToPx() }
+        // The Column has its own Spacing24 below Save. Without the room for the fade, Save would
+        // end right at the fade top.
+        assertThat(saveBottom).isAtMost(fadeTop - columnPadding)
     }
 
     @Test
