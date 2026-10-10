@@ -17,6 +17,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
 import kotlin.math.pow
 import me.prokhorov.coinfolio.theme.FadeExtraHeight
 
@@ -35,24 +37,31 @@ private const val FADE_STEPS = 8
 /**
  * Fades the [content] at the top and/or bottom edge.
  * Adds padding, so the first and last items can scroll fully out of the fades.
+ * [topBarHeight] is a solid bar inside the top padding.
+ * The top fade ignores it because the bar covers the content.
  */
 @Composable
 fun EdgeFadeBox(
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
+    topBarHeight: Dp = 0.dp,
     hasTopFade: Boolean = false,
     hasBottomFade: Boolean = false,
     content: @Composable (contentPadding: PaddingValues) -> Unit,
 ) {
     val layoutDirection = LocalLayoutDirection.current
-    val topInset = contentPadding.calculateTopPadding()
+    val topPadding = contentPadding.calculateTopPadding()
     val bottomInset = contentPadding.calculateBottomPadding()
+
+    // The system bars and the cutout at the top, without the bar.
+    val topInset = (topPadding - topBarHeight).coerceAtLeast(0.dp)
 
     Box(modifier = modifier) {
         content(
             PaddingValues(
                 start = contentPadding.calculateStartPadding(layoutDirection),
-                top = if (hasTopFade) topInset + FadeExtraHeight else topInset,
+                // The content starts below the bar or fade, whichever is lower.
+                top = if (hasTopFade) topInset + max(topBarHeight, FadeExtraHeight) else topPadding,
                 end = contentPadding.calculateEndPadding(layoutDirection),
                 bottom = if (hasBottomFade) bottomInset + FadeExtraHeight else bottomInset,
             ),

@@ -8,6 +8,7 @@ import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -35,17 +36,19 @@ class EdgeFadeBoxTest {
 
     private lateinit var contentPadding: PaddingValues
 
-    private fun showBox(hasTopFade: Boolean, hasBottomFade: Boolean) {
+    // A bar sits below the top inset, so it adds to the top padding.
+    private fun showBox(hasTopFade: Boolean, hasBottomFade: Boolean, topBarHeight: Dp = 0.dp) {
         composeRule.setContent {
             CoinFolioTheme {
                 EdgeFadeBox(
                     contentPadding = PaddingValues(
                         start = SIDE_INSET,
-                        top = TOP_INSET,
+                        top = TOP_INSET + topBarHeight,
                         end = SIDE_INSET,
                         bottom = BOTTOM_INSET,
                     ),
                     modifier = Modifier.size(BOX_SIZE),
+                    topBarHeight = topBarHeight,
                     hasTopFade = hasTopFade,
                     hasBottomFade = hasBottomFade,
                 ) { padding ->
@@ -95,6 +98,29 @@ class EdgeFadeBoxTest {
         // The fade ends on the bottom edge of the box.
         fade.assertTopPositionInRootIsEqualTo(BOX_SIZE - BOTTOM_INSET - FadeExtraHeight)
         composeRule.onNodeWithTag(TOP_FADE_TAG).assertDoesNotExist()
+    }
+
+    // The bar hides the end of the fade, so the content can start right below the bar.
+    @Test
+    fun with_a_bar_taller_than_the_band_the_content_starts_below_the_bar() {
+        val barHeight = FadeExtraHeight * 3
+        showBox(hasTopFade = true, hasBottomFade = false, topBarHeight = barHeight)
+
+        assertThat(contentPadding.calculateTopPadding()).isEqualTo(TOP_INSET + barHeight)
+        composeRule
+            .onNodeWithTag(TOP_FADE_TAG)
+            .assertHeightIsEqualTo(TOP_INSET + FadeExtraHeight)
+    }
+
+    @Test
+    fun with_a_bar_shorter_than_the_band_the_content_starts_below_the_fade() {
+        val barHeight = FadeExtraHeight / 2
+        showBox(hasTopFade = true, hasBottomFade = false, topBarHeight = barHeight)
+
+        assertThat(contentPadding.calculateTopPadding()).isEqualTo(TOP_INSET + FadeExtraHeight)
+        composeRule
+            .onNodeWithTag(TOP_FADE_TAG)
+            .assertHeightIsEqualTo(TOP_INSET + FadeExtraHeight)
     }
 
     // The sides have no fade, so they pass through unchanged.
