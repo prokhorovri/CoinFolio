@@ -106,7 +106,7 @@ Compose:
     # CompositionLocal can hide dependencies from a composable's parameters,
     # so the rule requires an explicit allowlist.
     # LocalExtendedColors: theme colors that Material 3 does not provide.
-    # LocalBottomBarHeight: the height of the bottom bar. It is layout, not data.
+    # LocalBottomInset: what covers the bottom edge of a screen. It is layout, not data.
     allowedCompositionLocals:
       - 'LocalExtendedColors'
-      - 'LocalBottomBarHeight'
+      - 'LocalBottomInset'

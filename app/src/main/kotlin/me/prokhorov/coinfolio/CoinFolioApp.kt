@@ -47,7 +47,8 @@ import me.prokhorov.coinfolio.navigation.TopLevelDestination
 import me.prokhorov.coinfolio.navigation.navigationType
 import me.prokhorov.coinfolio.navigation.rememberCoinFolioAppState
 import me.prokhorov.coinfolio.theme.CoinFolioTheme
-import me.prokhorov.coinfolio.ui.LocalBottomBarHeight
+import me.prokhorov.coinfolio.ui.BottomInset
+import me.prokhorov.coinfolio.ui.LocalBottomInset
 
 // Alpha of the bottom bar color over the blurred content.
 private const val BOTTOM_BAR_TINT_ALPHA = 0.6f
@@ -104,7 +105,7 @@ internal fun CoinFolioNavigationScaffold(
             }
         },
     ) { innerPadding ->
-        val bottomBarHeight = when (navigationType) {
+        val bottomPadding = when (navigationType) {
             is NavigationType.Bar -> innerPadding.calculateBottomPadding()
 
             // With the rail there is no bottom bar. The list still needs space for the
@@ -116,7 +117,12 @@ internal fun CoinFolioNavigationScaffold(
             NavigationType.None -> 0.dp
         }
 
-        CompositionLocalProvider(LocalBottomBarHeight provides bottomBarHeight) {
+        val bottomInset = BottomInset(
+            padding = bottomPadding,
+            hasBottomBar = navigationType is NavigationType.Bar,
+        )
+
+        CompositionLocalProvider(LocalBottomInset provides bottomInset) {
             // The nav graph is at the same place in both layouts. So the screens keep
             // their saved state, like the scroll position, after a rotation.
             Row(modifier = Modifier.fillMaxSize()) {

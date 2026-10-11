@@ -2,6 +2,7 @@ package me.prokhorov.coinfolio.screen.portfolio
 
 import androidx.activity.ComponentActivity
 import androidx.annotation.StringRes
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -9,6 +10,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import java.math.BigDecimal
@@ -23,6 +25,9 @@ import me.prokhorov.coinfolio.domain.usecase.GetCoinsByIdsUseCase
 import me.prokhorov.coinfolio.domain.usecase.GetHoldingsUseCase
 import me.prokhorov.coinfolio.domain.usecase.GetPortfolioUseCase
 import me.prokhorov.coinfolio.theme.CoinFolioTheme
+import me.prokhorov.coinfolio.ui.BottomInset
+import me.prokhorov.coinfolio.ui.LocalBottomInset
+import me.prokhorov.coinfolio.ui.overlay.BOTTOM_FADE_TAG
 import me.prokhorov.coinfolio.ui.overlay.TOP_FADE_TAG
 import me.prokhorov.coinfolio.util.formatAsUsd
 import org.junit.Rule
@@ -65,7 +70,8 @@ class PortfolioScreenTest {
 
     private var clickedCoinId: String? = null
 
-    private fun showScreen() {
+    // In portrait mode, the bottom bar covers the bottom edge.
+    private fun showScreen(hasBottomBar: Boolean = true) {
         // Built outside setContent, so a recomposition cannot create a second one.
         val viewModel = PortfolioViewModel(
             GetPortfolioUseCase(
@@ -76,10 +82,17 @@ class PortfolioScreenTest {
 
         composeRule.setContent {
             CoinFolioTheme {
-                PortfolioScreen(
-                    onCoinClick = { clickedCoinId = it },
-                    viewModel = viewModel,
-                )
+                CompositionLocalProvider(
+                    LocalBottomInset provides BottomInset(
+                        padding = 0.dp,
+                        hasBottomBar = hasBottomBar,
+                    ),
+                ) {
+                    PortfolioScreen(
+                        onCoinClick = { clickedCoinId = it },
+                        viewModel = viewModel,
+                    )
+                }
             }
         }
     }
@@ -178,6 +191,27 @@ class PortfolioScreenTest {
         showScreen()
 
         composeRule.onNodeWithTag(TOP_FADE_TAG).assertDoesNotExist()
+    }
+
+    // The rail doesn't cover the bottom edge, so the list fades there.
+    @Test
+    fun the_list_has_a_bottom_fade_when_no_bottom_bar_covers_the_bottom() {
+        saveHolding(BITCOIN_ID, BITCOIN_QUANTITY)
+        makeCoinsAvailable()
+
+        showScreen(hasBottomBar = false)
+
+        composeRule.onNodeWithTag(BOTTOM_FADE_TAG).assertExists()
+    }
+
+    @Test
+    fun the_list_has_no_bottom_fade_under_a_bottom_bar() {
+        saveHolding(BITCOIN_ID, BITCOIN_QUANTITY)
+        makeCoinsAvailable()
+
+        showScreen(hasBottomBar = true)
+
+        composeRule.onNodeWithTag(BOTTOM_FADE_TAG).assertDoesNotExist()
     }
 
     // No rows yet, so the error takes the whole screen and offers a retry.

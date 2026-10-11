@@ -40,7 +40,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -59,8 +58,9 @@ import me.prokhorov.coinfolio.theme.CoinIconSize
 import me.prokhorov.coinfolio.theme.Spacing12
 import me.prokhorov.coinfolio.theme.Spacing16
 import me.prokhorov.coinfolio.theme.Spacing24
+import me.prokhorov.coinfolio.ui.BottomInset
 import me.prokhorov.coinfolio.ui.FadingPullToRefreshIndicator
-import me.prokhorov.coinfolio.ui.LocalBottomBarHeight
+import me.prokhorov.coinfolio.ui.LocalBottomInset
 import me.prokhorov.coinfolio.ui.overlay.EdgeFadeBox
 import me.prokhorov.coinfolio.util.asMessage
 import me.prokhorov.coinfolio.util.formatAsQuantity
@@ -94,7 +94,7 @@ fun PortfolioScreen(
     PortfolioContent(
         state = state,
         snackbarHostState = snackbarHostState,
-        bottomBarHeight = LocalBottomBarHeight.current,
+        bottomInset = LocalBottomInset.current,
         onRetry = { viewModel.onIntent(PortfolioIntent.LoadPortfolio) },
         onRefresh = { viewModel.onIntent(PortfolioIntent.RefreshPortfolio) },
         onCoinClick = onCoinClick,
@@ -106,7 +106,7 @@ fun PortfolioScreen(
 private fun PortfolioContent(
     state: PortfolioUiState,
     snackbarHostState: SnackbarHostState,
-    bottomBarHeight: Dp,
+    bottomInset: BottomInset,
     onRetry: () -> Unit,
     onRefresh: () -> Unit,
     onCoinClick: (String) -> Unit,
@@ -120,7 +120,7 @@ private fun PortfolioContent(
         // Add space for the bottom bar so the last item is visible when scrolled to the bottom.
         contentWindowInsets = ScaffoldDefaults.contentWindowInsets
             .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)
-            .add(WindowInsets(bottom = bottomBarHeight)),
+            .add(WindowInsets(bottom = bottomInset.padding)),
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
         PullToRefreshBox(
@@ -156,6 +156,8 @@ private fun PortfolioContent(
                     HoldingList(
                         portfolio = state.portfolio,
                         contentPadding = innerPadding,
+                        // The bottom bar already covers the list, so it needs no fade there.
+                        hasBottomFade = !bottomInset.hasBottomBar,
                         onCoinClick = onCoinClick,
                     )
                 }
@@ -209,11 +211,16 @@ private fun EmptyState(contentPadding: PaddingValues) {
 private fun HoldingList(
     portfolio: Portfolio,
     contentPadding: PaddingValues,
+    hasBottomFade: Boolean,
     onCoinClick: (String) -> Unit,
 ) {
     val layoutDirection = LocalLayoutDirection.current
 
-    EdgeFadeBox(contentPadding = contentPadding, hasTopFade = true) { fadePadding ->
+    EdgeFadeBox(
+        contentPadding = contentPadding,
+        hasTopFade = true,
+        hasBottomFade = hasBottomFade,
+    ) { fadePadding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
@@ -339,7 +346,7 @@ private fun PortfolioContentPreview() {
                 ),
             ),
             snackbarHostState = remember { SnackbarHostState() },
-            bottomBarHeight = 0.dp,
+            bottomInset = BottomInset(padding = 0.dp, hasBottomBar = true),
             onRetry = {},
             onRefresh = {},
             onCoinClick = {},

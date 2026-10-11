@@ -16,11 +16,13 @@ import com.google.common.truth.Truth.assertThat
 import me.prokhorov.coinfolio.navigation.NavigationType
 import me.prokhorov.coinfolio.navigation.TopLevelDestination
 import me.prokhorov.coinfolio.theme.CoinFolioTheme
+import me.prokhorov.coinfolio.ui.BottomInset
+import me.prokhorov.coinfolio.ui.LocalBottomInset
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-// Tests the bar and the rail only, so the content is empty and we don't need Hilt.
+// Tests the bar and the rail only, so the content is nearly empty and we don't need Hilt.
 @RunWith(AndroidJUnit4::class)
 class CoinFolioNavigationScaffoldTest {
 
@@ -29,13 +31,18 @@ class CoinFolioNavigationScaffoldTest {
 
     private var clickedTab: TopLevelDestination? = null
 
+    // What the screens get from LocalBottomInset.
+    private var bottomInset: BottomInset? = null
+
     private fun showApp(navigationType: NavigationType) {
         composeRule.setContent {
             CoinFolioTheme {
                 CoinFolioNavigationScaffold(
                     navigationType = navigationType,
                     onDestinationClick = { clickedTab = it },
-                ) {}
+                ) {
+                    bottomInset = LocalBottomInset.current
+                }
             }
         }
     }
@@ -81,5 +88,19 @@ class CoinFolioNavigationScaffoldTest {
         item(NAVIGATION_RAIL_TAG, TopLevelDestination.PORTFOLIO).performClick()
 
         composeRule.runOnIdle { assertThat(clickedTab).isEqualTo(TopLevelDestination.PORTFOLIO) }
+    }
+
+    @Test
+    fun bar_mode_tells_the_screens_a_bottom_bar_covers_the_bottom_edge() {
+        showApp(NavigationType.Bar(TopLevelDestination.COINS))
+
+        composeRule.runOnIdle { assertThat(bottomInset?.hasBottomBar).isTrue() }
+    }
+
+    @Test
+    fun rail_mode_tells_the_screens_no_bottom_bar_covers_the_bottom_edge() {
+        showApp(NavigationType.Rail(TopLevelDestination.COINS))
+
+        composeRule.runOnIdle { assertThat(bottomInset?.hasBottomBar).isFalse() }
     }
 }

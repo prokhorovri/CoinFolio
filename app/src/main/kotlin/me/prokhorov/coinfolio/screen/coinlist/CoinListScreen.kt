@@ -72,8 +72,9 @@ import me.prokhorov.coinfolio.theme.Spacing16
 import me.prokhorov.coinfolio.theme.Spacing24
 import me.prokhorov.coinfolio.theme.Spacing8
 import me.prokhorov.coinfolio.theme.extendedColors
+import me.prokhorov.coinfolio.ui.BottomInset
 import me.prokhorov.coinfolio.ui.FadingPullToRefreshIndicator
-import me.prokhorov.coinfolio.ui.LocalBottomBarHeight
+import me.prokhorov.coinfolio.ui.LocalBottomInset
 import me.prokhorov.coinfolio.ui.overlay.EdgeFadeBox
 import me.prokhorov.coinfolio.util.asMessage
 import me.prokhorov.coinfolio.util.formatAsPercent
@@ -107,7 +108,7 @@ fun CoinListScreen(
     CoinListContent(
         state = state,
         snackbarHostState = snackbarHostState,
-        bottomBarHeight = LocalBottomBarHeight.current,
+        bottomInset = LocalBottomInset.current,
         onRetry = { viewModel.onIntent(CoinListIntent.LoadCoins) },
         onRefresh = { viewModel.onIntent(CoinListIntent.RefreshCoins) },
         onQueryChange = { viewModel.onIntent(CoinListIntent.ChangeQuery(it)) },
@@ -120,7 +121,7 @@ fun CoinListScreen(
 private fun CoinListContent(
     state: CoinListUiState,
     snackbarHostState: SnackbarHostState,
-    bottomBarHeight: Dp,
+    bottomInset: BottomInset,
     onRetry: () -> Unit,
     onRefresh: () -> Unit,
     onQueryChange: (String) -> Unit,
@@ -152,7 +153,7 @@ private fun CoinListContent(
         },
         containerColor = Color.Transparent,
         // Add space for the bottom bar so the last item is visible when scrolled to the bottom.
-        contentWindowInsets = topInsets.add(WindowInsets(bottom = bottomBarHeight)),
+        contentWindowInsets = topInsets.add(WindowInsets(bottom = bottomInset.padding)),
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
         // The top padding is the top insets plus the search field. Zero while there is no field.
@@ -179,6 +180,8 @@ private fun CoinListContent(
                 state = state,
                 contentPadding = innerPadding,
                 topBarHeight = topBarHeight,
+                // The bottom bar already covers the list, so it needs no fade there.
+                hasBottomFade = !bottomInset.hasBottomBar,
                 onRetry = onRetry,
                 onCoinClick = onCoinClick,
             )
@@ -192,6 +195,7 @@ private fun CoinListBody(
     state: CoinListUiState,
     contentPadding: PaddingValues,
     topBarHeight: Dp,
+    hasBottomFade: Boolean,
     onRetry: () -> Unit,
     onCoinClick: (String) -> Unit,
 ) {
@@ -216,6 +220,7 @@ private fun CoinListBody(
                 query = state.query,
                 contentPadding = contentPadding,
                 topBarHeight = topBarHeight,
+                hasBottomFade = hasBottomFade,
                 onCoinClick = onCoinClick,
             )
         }
@@ -269,6 +274,7 @@ private fun CoinList(
     query: String,
     contentPadding: PaddingValues,
     topBarHeight: Dp,
+    hasBottomFade: Boolean,
     onCoinClick: (String) -> Unit,
 ) {
     val layoutDirection = LocalLayoutDirection.current
@@ -287,6 +293,7 @@ private fun CoinList(
         contentPadding = contentPadding,
         topBarHeight = topBarHeight,
         hasTopFade = true,
+        hasBottomFade = hasBottomFade,
     ) { fadePadding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -442,7 +449,7 @@ private fun CoinListContentPreview() {
         CoinListContent(
             state = CoinListUiState(coins = coins, filteredCoins = coins),
             snackbarHostState = remember { SnackbarHostState() },
-            bottomBarHeight = 0.dp,
+            bottomInset = BottomInset(padding = 0.dp, hasBottomBar = true),
             onRetry = {},
             onRefresh = {},
             onQueryChange = {},
