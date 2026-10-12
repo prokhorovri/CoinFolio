@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import kotlin.math.pow
-import me.prokhorov.coinfolio.theme.FadeExtraHeight
+import me.prokhorov.coinfolio.theme.FadeBandHeight
 
 @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
 internal const val TOP_FADE_TAG = "top_fade"
@@ -28,10 +28,14 @@ internal const val TOP_FADE_TAG = "top_fade"
 @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
 internal const val BOTTOM_FADE_TAG = "bottom_fade"
 
-// Controls how quickly the content becomes visible from the edge.
+// The alpha where the inset ends and the band starts. Over the inset the fade is almost solid.
+@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+internal const val BAR_ALPHA = 0.9f
+
+// Controls how quickly the content becomes visible in the band.
 private const val FADE_EXPONENT = 1.5f
 
-// How many color stops draw the curve. More stops make it smoother.
+// How many color stops draw the curve in the band. More stops make it smoother.
 private const val FADE_STEPS = 8
 
 private enum class FadeEdge { TOP, BOTTOM }
@@ -63,9 +67,9 @@ fun EdgeFadeBox(
             PaddingValues(
                 start = contentPadding.calculateStartPadding(layoutDirection),
                 // The content starts below the bar or fade, whichever is lower.
-                top = if (hasTopFade) topInset + max(topBarHeight, FadeExtraHeight) else topPadding,
+                top = if (hasTopFade) topInset + max(topBarHeight, FadeBandHeight) else topPadding,
                 end = contentPadding.calculateEndPadding(layoutDirection),
-                bottom = if (hasBottomFade) bottomInset + FadeExtraHeight else bottomInset,
+                bottom = if (hasBottomFade) bottomInset + FadeBandHeight else bottomInset,
             ),
         )
 
@@ -98,13 +102,13 @@ private fun EdgeFadeOverlay(
 ) {
     val backgroundColor = MaterialTheme.colorScheme.background
 
-    // The first stop is solid and sits on the screen edge. The last one is fully clear.
+    val bandStartFraction = systemBarsHeight / (systemBarsHeight + FadeBandHeight)
+
     // Both edges use the same stops. Only the brush direction is different.
-    val colorStops = remember(backgroundColor) {
-        Array(FADE_STEPS + 1) { step ->
-            val fraction = step.toFloat() / FADE_STEPS
-            fraction to backgroundColor.copy(alpha = 1f - fraction.pow(FADE_EXPONENT))
-        }
+    val colorStops = remember(backgroundColor, bandStartFraction) {
+        fadeAlphaStops(bandStartFraction)
+            .map { (position, alpha) -> position to backgroundColor.copy(alpha = alpha) }
+            .toTypedArray()
     }
     val brush = when (edge) {
         // By default the brush goes from the top of the box (startY = 0f) to the bottom
@@ -125,7 +129,35 @@ private fun EdgeFadeOverlay(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(systemBarsHeight + FadeExtraHeight)
+            .height(systemBarsHeight + FadeBandHeight)
             .background(brush = brush),
     )
+}
+
+@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+internal fun fadeAlphaStops(bandStartFraction: Float): List<Pair<Float, Float>> {
+    // Example: a 48dp system bar and the 24dp band, so bandStartFraction = 48 / 72 = 0.67.
+    // Every second band stop is shown.
+    //
+    //   position  alpha
+    //   0.00      1.00   screen edge
+    //                    | system bar: an even gradient, almost solid
+    //   0.67      0.90   band start
+    //   0.75      0.79   |
+    //   0.83      0.58   | band: a curve, from dark to clear
+    //   0.92      0.32   |
+    //   1.00      0.00   inner end, the content is fully visible
+
+    val stops = mutableListOf(0f to 1f)
+
+    val bandHeightFraction = 1f - bandStartFraction
+
+    for (step in 0..FADE_STEPS) {
+        val stepInBandFraction = step.toFloat() / FADE_STEPS
+        val stopPositionFraction = bandStartFraction + stepInBandFraction * bandHeightFraction
+        val stopAlpha = BAR_ALPHA * (1f - stepInBandFraction.pow(FADE_EXPONENT))
+        stops += stopPositionFraction to stopAlpha
+    }
+
+    return stops
 }
