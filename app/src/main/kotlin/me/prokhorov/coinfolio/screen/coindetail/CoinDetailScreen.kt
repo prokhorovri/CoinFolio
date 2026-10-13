@@ -1,5 +1,6 @@
 package me.prokhorov.coinfolio.screen.coindetail
 
+import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,6 +39,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
@@ -51,11 +53,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -83,6 +87,12 @@ import me.prokhorov.coinfolio.util.formatAsCompactUsd
 import me.prokhorov.coinfolio.util.formatAsPercent
 import me.prokhorov.coinfolio.util.formatAsUsd
 import me.prokhorov.coinfolio.util.isGain
+
+@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+internal const val TOP_BAR_TAG = "top_bar"
+
+@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+internal const val COIN_SUMMARY_TAG = "coin_summary"
 
 @Composable
 fun CoinDetailScreen(
@@ -153,10 +163,16 @@ private fun CoinDetailContent(
                         )
                     }
                 },
+                modifier = Modifier.testTag(TOP_BAR_TAG),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
+        // The top padding is the status bar plus the bar. This is the bar alone.
+        val topBarHeight = innerPadding.calculateTopPadding() -
+            TopAppBarDefaults.windowInsets.asPaddingValues().calculateTopPadding()
+
         @Suppress("IntroduceWhenSubject")
         when {
             state.coin == null && state.error != null -> {
@@ -178,6 +194,7 @@ private fun CoinDetailContent(
                     holdingError = state.holdingError,
                     canSave = state.canSave,
                     contentPadding = innerPadding,
+                    topBarHeight = topBarHeight,
                     onQuantityChange = onQuantityChange,
                     onSaveClick = onSaveClick,
                 )
@@ -224,6 +241,7 @@ private fun CoinDetailBody(
     holdingError: AppError?,
     canSave: Boolean,
     contentPadding: PaddingValues,
+    topBarHeight: Dp,
     onQuantityChange: (String) -> Unit,
     onSaveClick: () -> Unit,
 ) {
@@ -240,18 +258,23 @@ private fun CoinDetailBody(
         .calculateBottomPadding()
 
     EdgeFadeBox(
-        // The scroll area reaches the bottom of the screen.
-        // The content scrolls under the navigation bar.
+        // The scroll area reaches the top and the bottom of the screen.
+        // The content scrolls under the top bar and the navigation bar.
         modifier = Modifier
             .padding(
                 start = contentPadding.calculateStartPadding(layoutDirection),
-                top = contentPadding.calculateTopPadding(),
                 end = contentPadding.calculateEndPadding(layoutDirection),
             )
             // Stop the scroll area at the keyboard, so the text field stays visible.
             .imePadding(),
-        // Add space for the navigation bar so the last item can scroll above it.
-        contentPadding = PaddingValues(bottom = navigationBarHeight),
+        // Add space for the top bar and the navigation bar, so the first and last items can
+        // scroll out from under them.
+        contentPadding = PaddingValues(
+            top = contentPadding.calculateTopPadding(),
+            bottom = navigationBarHeight,
+        ),
+        topBarHeight = topBarHeight,
+        hasTopFade = true,
         // No fade over the keyboard. The scroll area ends at its top.
         hasBottomFade = !isKeyboardDocked,
     ) { fadePadding ->
@@ -284,7 +307,9 @@ private fun CoinDetailBody(
 @Composable
 private fun CoinSummary(coin: CoinDetail) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag(COIN_SUMMARY_TAG),
         horizontalArrangement = Arrangement.spacedBy(Spacing16),
         verticalAlignment = Alignment.CenterVertically,
     ) {

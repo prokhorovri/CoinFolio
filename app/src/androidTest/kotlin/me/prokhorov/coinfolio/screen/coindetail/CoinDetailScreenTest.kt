@@ -10,6 +10,7 @@ import androidx.compose.ui.semantics.SemanticsProperties.VerticalScrollAxisRange
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -36,6 +37,7 @@ import me.prokhorov.coinfolio.domain.usecase.SaveHoldingUseCase
 import me.prokhorov.coinfolio.theme.CoinFolioTheme
 import me.prokhorov.coinfolio.theme.Spacing24
 import me.prokhorov.coinfolio.ui.overlay.BOTTOM_FADE_TAG
+import me.prokhorov.coinfolio.ui.overlay.TOP_FADE_TAG
 import me.prokhorov.coinfolio.util.formatAsUsd
 import org.junit.Rule
 import org.junit.Test
@@ -194,6 +196,39 @@ class CoinDetailScreenTest {
         // The Column has its own Spacing24 below Save. Without the room for the fade, Save would
         // end right at the fade top.
         assertThat(saveBottom).isAtMost(fadeTop - columnPadding)
+    }
+
+    // The content scrolls under the top bar, so it has a fade.
+    @Test
+    fun the_content_has_a_top_fade() {
+        makeCoinAvailable()
+
+        showScreen()
+
+        composeRule.onNodeWithTag(TOP_FADE_TAG).assertExists()
+    }
+
+    // At rest, nothing is under the bar.
+    @Test
+    fun the_content_starts_below_the_top_bar() {
+        makeCoinAvailable()
+
+        showScreen()
+
+        val barBottom = composeRule.onNodeWithTag(TOP_BAR_TAG).getUnclippedBoundsInRoot().bottom
+        val summaryTop = composeRule
+            .onNodeWithTag(COIN_SUMMARY_TAG)
+            .getUnclippedBoundsInRoot()
+            .top
+        assertThat(barBottom.value).isAtMost(summaryTop.value)
+    }
+
+    // The fade is only for content that scrolls.
+    @Test
+    fun the_error_state_has_no_top_fade() {
+        showScreen()
+
+        composeRule.onNodeWithTag(TOP_FADE_TAG).assertDoesNotExist()
     }
 
     @Test

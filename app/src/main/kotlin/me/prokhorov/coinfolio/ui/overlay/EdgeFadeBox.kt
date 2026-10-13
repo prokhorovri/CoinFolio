@@ -43,8 +43,8 @@ private enum class FadeEdge { TOP, BOTTOM }
 /**
  * Fades the [content] at the top and/or bottom edge.
  * Adds padding, so the first and last items can scroll fully out of the fades.
- * [topBarHeight] is a solid bar inside the top padding.
- * The top fade ignores it because the bar covers the content.
+ * [topBarHeight] is a bar inside the top padding. The content starts below the bar,
+ * but the top fade keeps its normal height.
  */
 @Composable
 fun EdgeFadeBox(
