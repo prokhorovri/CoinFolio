@@ -56,6 +56,9 @@ private const val TOO_LARGE_QUANTITY = "1234567890123456"
 // Shorter than the content, so the content must scroll.
 private val SHORT_SCREEN_HEIGHT = 300.dp
 
+// Much less than the content can scroll on the short screen.
+private const val SMALL_SCROLL_PIXELS = 100f
+
 /**
  * Shows the real screen with a real ViewModel over the fakes. The coin id comes from
  * [SavedStateHandle], like in the app. Method names use underscores. A space in a method name
@@ -101,6 +104,13 @@ class CoinDetailScreenTest {
     }
 
     private fun getString(@StringRes id: Int): String = composeRule.activity.getString(id)
+
+    // The quantity field can scroll too, so it is left out.
+    private fun scrollContentBy(pixels: Float) {
+        composeRule
+            .onNode(hasScrollAction() and !hasSetTextAction())
+            .performSemanticsAction(ScrollBy) { scrollBy -> scrollBy(0f, pixels) }
+    }
 
     @Test
     fun shows_the_coin_summary() {
@@ -235,6 +245,39 @@ class CoinDetailScreenTest {
     fun a_click_on_back_reports_it() {
         makeCoinAvailable()
         showScreen()
+
+        composeRule.onNodeWithContentDescription(getString(R.string.back_text)).performClick()
+
+        assertThat(isBackClicked).isTrue()
+    }
+
+    // The title is the coin name. The test coin uses its id as the name.
+    @Test
+    fun a_scroll_hides_the_title() {
+        makeCoinAvailable()
+        showScreen(height = SHORT_SCREEN_HEIGHT)
+
+        scrollContentBy(SMALL_SCROLL_PIXELS)
+
+        composeRule.onNodeWithText(COIN_ID).assertDoesNotExist()
+    }
+
+    @Test
+    fun a_scroll_back_to_the_top_shows_the_title() {
+        makeCoinAvailable()
+        showScreen(height = SHORT_SCREEN_HEIGHT)
+        scrollContentBy(SMALL_SCROLL_PIXELS)
+
+        scrollContentBy(-SMALL_SCROLL_PIXELS)
+
+        composeRule.onNodeWithText(COIN_ID).assertIsDisplayed()
+    }
+
+    @Test
+    fun a_click_on_back_after_a_scroll_reports_it() {
+        makeCoinAvailable()
+        showScreen(height = SHORT_SCREEN_HEIGHT)
+        scrollContentBy(SMALL_SCROLL_PIXELS)
 
         composeRule.onNodeWithContentDescription(getString(R.string.back_text)).performClick()
 

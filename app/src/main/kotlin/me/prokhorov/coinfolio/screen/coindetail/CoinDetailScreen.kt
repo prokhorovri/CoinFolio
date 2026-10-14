@@ -1,6 +1,11 @@
 package me.prokhorov.coinfolio.screen.coindetail
 
 import androidx.annotation.VisibleForTesting
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +25,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.rememberTextFieldState
@@ -49,7 +55,9 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -72,6 +80,7 @@ import kotlinx.coroutines.flow.drop
 import me.prokhorov.coinfolio.R
 import me.prokhorov.coinfolio.domain.model.CoinDetail
 import me.prokhorov.coinfolio.domain.result.AppError
+import me.prokhorov.coinfolio.theme.BackButtonShadowElevation
 import me.prokhorov.coinfolio.theme.CoinDetailIconSize
 import me.prokhorov.coinfolio.theme.CoinFolioTheme
 import me.prokhorov.coinfolio.theme.Spacing16
@@ -147,6 +156,10 @@ private fun CoinDetailContent(
     onSaveClick: () -> Unit,
     onRetry: () -> Unit,
 ) {
+    val scrollState = rememberScrollState()
+    // True as soon as the content has moved up, even by one pixel.
+    val isScrolled = scrollState.canScrollBackward
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = Color.Transparent,
@@ -154,14 +167,14 @@ private fun CoinDetailContent(
         contentWindowInsets = ScaffoldDefaults.contentWindowInsets.union(WindowInsets.ime),
         topBar = {
             TopAppBar(
-                title = { Text(text = state.coin?.name ?: state.coinId) },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_arrow_back),
-                            contentDescription = stringResource(R.string.back_text),
-                        )
+                title = {
+                    // The title is shown only while nothing is scrolled under it.
+                    AnimatedVisibility(visible = !isScrolled, enter = fadeIn(), exit = fadeOut()) {
+                        Text(text = state.coin?.name ?: state.coinId)
                     }
+                },
+                navigationIcon = {
+                    BackButton(hasBackground = isScrolled, onClick = onBackClick)
                 },
                 modifier = Modifier.testTag(TOP_BAR_TAG),
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
@@ -193,6 +206,7 @@ private fun CoinDetailContent(
                     savedQuantity = state.savedQuantity,
                     holdingError = state.holdingError,
                     canSave = state.canSave,
+                    scrollState = scrollState,
                     contentPadding = innerPadding,
                     topBarHeight = topBarHeight,
                     onQuantityChange = onQuantityChange,
@@ -200,6 +214,29 @@ private fun CoinDetailContent(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun BackButton(hasBackground: Boolean, onClick: () -> Unit) {
+    val backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh
+    val backgroundAlpha by animateFloatAsState(targetValue = if (hasBackground) 1f else 0f)
+
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier
+            // Read the alpha in the draw phase, so the animation does not recompose.
+            .graphicsLayer {
+                shape = CircleShape
+                clip = true
+                shadowElevation = backgroundAlpha * BackButtonShadowElevation.toPx()
+            }
+            .drawBehind { drawRect(color = backgroundColor, alpha = backgroundAlpha) },
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.ic_arrow_back),
+            contentDescription = stringResource(R.string.back_text),
+        )
     }
 }
 
@@ -240,6 +277,7 @@ private fun CoinDetailBody(
     savedQuantity: BigDecimal?,
     holdingError: AppError?,
     canSave: Boolean,
+    scrollState: ScrollState,
     contentPadding: PaddingValues,
     topBarHeight: Dp,
     onQuantityChange: (String) -> Unit,
@@ -281,7 +319,7 @@ private fun CoinDetailBody(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
                 .padding(fadePadding)
                 .padding(horizontal = Spacing16, vertical = Spacing24),
             verticalArrangement = Arrangement.spacedBy(Spacing16),
