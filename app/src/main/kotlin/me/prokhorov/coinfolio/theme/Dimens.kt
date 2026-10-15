@@ -6,6 +6,7 @@ import androidx.compose.ui.unit.dp
 val FadeBandHeight = 24.dp
 val CoinIconSize = 40.dp
 val CoinDetailIconSize = 64.dp
+val BackButtonBackgroundSize = 40.dp
 val BackButtonShadowElevation = 3.dp
 
 // Pull to refresh indicator.

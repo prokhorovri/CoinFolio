@@ -6,6 +6,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -55,7 +56,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
@@ -80,6 +80,7 @@ import kotlinx.coroutines.flow.drop
 import me.prokhorov.coinfolio.R
 import me.prokhorov.coinfolio.domain.model.CoinDetail
 import me.prokhorov.coinfolio.domain.result.AppError
+import me.prokhorov.coinfolio.theme.BackButtonBackgroundSize
 import me.prokhorov.coinfolio.theme.BackButtonShadowElevation
 import me.prokhorov.coinfolio.theme.CoinDetailIconSize
 import me.prokhorov.coinfolio.theme.CoinFolioTheme
@@ -222,21 +223,27 @@ private fun BackButton(hasBackground: Boolean, onClick: () -> Unit) {
     val backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh
     val backgroundAlpha by animateFloatAsState(targetValue = if (hasBackground) 1f else 0f)
 
-    IconButton(
-        onClick = onClick,
-        modifier = Modifier
-            // Read the alpha in the draw phase, so the animation does not recompose.
-            .graphicsLayer {
-                shape = CircleShape
-                clip = true
-                shadowElevation = backgroundAlpha * BackButtonShadowElevation.toPx()
-            }
-            .drawBehind { drawRect(color = backgroundColor, alpha = backgroundAlpha) },
-    ) {
-        Icon(
-            painter = painterResource(R.drawable.ic_arrow_back),
-            contentDescription = stringResource(R.string.back_text),
+    Box(contentAlignment = Alignment.Center) {
+        // The layer alpha fades the color and the shadow together. The alpha of the color alone
+        // does not fade the shadow, and a small dark shadow shows as a polygon.
+        // The arrow is outside this layer, so it stays visible.
+        Box(
+            modifier = Modifier
+                .size(BackButtonBackgroundSize)
+                .graphicsLayer {
+                    alpha = backgroundAlpha
+                    shape = CircleShape
+                    clip = true
+                    shadowElevation = backgroundAlpha * BackButtonShadowElevation.toPx()
+                }
+                .background(backgroundColor),
         )
+        IconButton(onClick = onClick) {
+            Icon(
+                painter = painterResource(R.drawable.ic_arrow_back),
+                contentDescription = stringResource(R.string.back_text),
+            )
+        }
     }
 }
 
