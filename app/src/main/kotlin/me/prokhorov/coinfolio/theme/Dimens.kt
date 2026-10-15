@@ -9,6 +9,10 @@ val CoinDetailIconSize = 64.dp
 val BackButtonBackgroundSize = 40.dp
 val BackButtonShadowElevation = 3.dp
 
+// Phones in portrait are narrower than 600dp. A bit more keeps the list phone-sized on wide
+// windows. Not a standard, just my design choice.
+val ListMaxWidth = 640.dp
+
 // Pull to refresh indicator.
 val RefreshIndicatorSize = 40.dp
 val RefreshIndicatorSpinnerSize = 16.dp

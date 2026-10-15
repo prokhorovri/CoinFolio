@@ -16,7 +16,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -67,6 +69,7 @@ import me.prokhorov.coinfolio.R
 import me.prokhorov.coinfolio.domain.model.Coin
 import me.prokhorov.coinfolio.theme.CoinFolioTheme
 import me.prokhorov.coinfolio.theme.CoinIconSize
+import me.prokhorov.coinfolio.theme.ListMaxWidth
 import me.prokhorov.coinfolio.theme.Spacing12
 import me.prokhorov.coinfolio.theme.Spacing16
 import me.prokhorov.coinfolio.theme.Spacing24
@@ -147,7 +150,12 @@ private fun CoinListContent(
                     onQueryChange = onQueryChange,
                     onSearch = { focusManager.clearFocus() },
                     // With a top bar, Scaffold leaves the status bar to the bar itself.
-                    modifier = Modifier.windowInsetsPadding(topInsets),
+                    // On a wide window the field keeps the list width and stays centered.
+                    modifier = Modifier
+                        .windowInsetsPadding(topInsets)
+                        .fillMaxWidth()
+                        .wrapContentWidth()
+                        .widthIn(max = ListMaxWidth),
                 )
             }
         },
@@ -296,6 +304,7 @@ private fun CoinList(
         hasBottomFade = hasBottomFade,
     ) { fadePadding ->
         LazyColumn(
+            // Full width, so a drag anywhere scrolls and refreshes. Only the items are limited.
             modifier = Modifier.fillMaxSize(),
             state = listState,
             contentPadding = PaddingValues(
@@ -304,6 +313,7 @@ private fun CoinList(
                 top = fadePadding.calculateTopPadding(),
                 bottom = fadePadding.calculateBottomPadding() + Spacing16,
             ),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             // Keep the "not found" message as a list item so pull-to-refresh still works.
             if (coins.isEmpty()) {
@@ -385,6 +395,7 @@ private fun NotFoundMessage(query: String) {
 private fun CoinRow(coin: Coin, onClick: () -> Unit) {
     Row(
         modifier = Modifier
+            .widthIn(max = ListMaxWidth)
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .padding(horizontal = Spacing16, vertical = Spacing12),
@@ -424,6 +435,7 @@ private fun CoinRow(coin: Coin, onClick: () -> Unit) {
 }
 
 @Preview(showBackground = true)
+@Preview(name = "Wide", showBackground = true, widthDp = 891, heightDp = 411)
 @Composable
 private fun CoinListContentPreview() {
     val coins = listOf(

@@ -2,7 +2,10 @@ package me.prokhorov.coinfolio.screen.coinlist
 
 import androidx.activity.ComponentActivity
 import androidx.annotation.StringRes
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.test.DeviceConfigurationOverride
+import androidx.compose.ui.test.ForcedSize
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
@@ -18,7 +21,9 @@ import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.width
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import java.math.BigDecimal
@@ -29,6 +34,7 @@ import me.prokhorov.coinfolio.domain.testing.FakeCoinRepository
 import me.prokhorov.coinfolio.domain.testing.createCoin
 import me.prokhorov.coinfolio.domain.usecase.GetTopCoinsUseCase
 import me.prokhorov.coinfolio.theme.CoinFolioTheme
+import me.prokhorov.coinfolio.theme.ListMaxWidth
 import me.prokhorov.coinfolio.ui.BottomInset
 import me.prokhorov.coinfolio.ui.LocalBottomInset
 import me.prokhorov.coinfolio.ui.overlay.BOTTOM_FADE_TAG
@@ -42,6 +48,9 @@ private const val BITCOIN_ID = "bitcoin"
 private const val BITCOIN_SYMBOL = "btc"
 private const val BITCOIN_PRICE = "67000.55"
 private const val ETHEREUM_ID = "ethereum"
+
+// A landscape tablet, wider than ListMaxWidth.
+private val WIDE_WINDOW_SIZE = DpSize(1280.dp, 800.dp)
 
 /**
  * Shows the real screen with a real ViewModel over [FakeCoinRepository]. No Hilt: the screen
@@ -59,7 +68,7 @@ class CoinListScreenTest {
     private var clickedCoinId: String? = null
 
     // In portrait mode, the bottom bar covers the bottom edge.
-    private fun showScreen(hasBottomBar: Boolean = true) {
+    private fun showScreen(hasBottomBar: Boolean = true, windowSize: DpSize? = null) {
         // Built outside setContent, so a recomposition cannot create a second one.
         val viewModel = CoinListViewModel(GetTopCoinsUseCase(repository))
 
@@ -71,10 +80,22 @@ class CoinListScreenTest {
                         hasBottomBar = hasBottomBar,
                     ),
                 ) {
-                    CoinListScreen(
-                        onCoinClick = { clickedCoinId = it },
-                        viewModel = viewModel,
-                    )
+                    val screen = @Composable {
+                        CoinListScreen(
+                            onCoinClick = { clickedCoinId = it },
+                            viewModel = viewModel,
+                        )
+                    }
+                    if (windowSize == null) {
+                        screen()
+                    } else {
+                        // Gives the screen a window of this size, even if the device is smaller.
+                        DeviceConfigurationOverride(
+                            DeviceConfigurationOverride.ForcedSize(windowSize),
+                        ) {
+                            screen()
+                        }
+                    }
                 }
             }
         }
@@ -114,6 +135,26 @@ class CoinListScreenTest {
         composeRule.onNodeWithText(ETHEREUM_ID).performClick()
 
         assertThat(clickedCoinId).isEqualTo(ETHEREUM_ID)
+    }
+
+    @Test
+    fun a_row_is_not_wider_than_the_list_max_width_on_a_wide_window() {
+        repository.topCoins = Resource.Success(listOf(createCoin(BITCOIN_ID)))
+
+        showScreen(hasBottomBar = false, windowSize = WIDE_WINDOW_SIZE)
+
+        val rowWidth = composeRule.onNodeWithText(BITCOIN_ID).getUnclippedBoundsInRoot().width
+        assertThat(rowWidth).isAtMost(ListMaxWidth)
+    }
+
+    @Test
+    fun the_search_field_is_not_wider_than_the_list_max_width_on_a_wide_window() {
+        repository.topCoins = Resource.Success(listOf(createCoin(BITCOIN_ID)))
+
+        showScreen(hasBottomBar = false, windowSize = WIDE_WINDOW_SIZE)
+
+        val fieldWidth = searchField().getUnclippedBoundsInRoot().width
+        assertThat(fieldWidth).isAtMost(ListMaxWidth)
     }
 
     @Test
