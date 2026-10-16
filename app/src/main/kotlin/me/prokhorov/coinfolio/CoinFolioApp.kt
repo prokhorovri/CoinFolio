@@ -33,7 +33,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.window.core.layout.WindowSizeClass
 import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.blur.HazeBlurStyle
@@ -49,6 +48,7 @@ import me.prokhorov.coinfolio.navigation.rememberCoinFolioAppState
 import me.prokhorov.coinfolio.theme.CoinFolioTheme
 import me.prokhorov.coinfolio.ui.BottomInset
 import me.prokhorov.coinfolio.ui.LocalBottomInset
+import me.prokhorov.coinfolio.util.isWideWindow
 
 // Alpha of the bottom bar color over the blurred content.
 private const val BOTTOM_BAR_TINT_ALPHA = 0.6f
@@ -67,8 +67,7 @@ fun CoinFolioApp(windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveI
     val appState = rememberCoinFolioAppState()
     val navigationType = navigationType(
         topLevelDestination = appState.currentTopLevelDestination,
-        isWideWindow = windowAdaptiveInfo.windowSizeClass
-            .isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND),
+        isWideWindow = windowAdaptiveInfo.isWideWindow,
     )
 
     CoinFolioNavigationScaffold(

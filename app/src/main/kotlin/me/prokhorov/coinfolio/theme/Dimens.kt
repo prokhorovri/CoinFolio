@@ -13,6 +13,9 @@ val BackButtonShadowElevation = 3.dp
 // windows. Not a standard, just my design choice.
 val ListMaxWidth = 640.dp
 
+// The left pane with the portfolio total on wide windows. A design choice.
+val PortfolioTotalPaneWidth = 360.dp
+
 // Pull to refresh indicator.
 val RefreshIndicatorSize = 40.dp
 val RefreshIndicatorSpinnerSize = 16.dp
