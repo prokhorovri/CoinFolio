@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -42,6 +43,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -345,7 +347,19 @@ private fun TotalValueHeader(total: BigDecimal, modifier: Modifier = Modifier) {
             text = stringResource(R.string.portfolio_screen_total_label_text),
             style = MaterialTheme.typography.labelMedium,
         )
-        Text(text = total.formatAsUsd(), style = MaterialTheme.typography.headlineMedium)
+        // A long total gets a smaller font instead of a second line.
+        // If it still does not fit, it ends with dots.
+        // TODO: show big totals in a short format like $12.3B if we need it.
+        Text(
+            text = total.formatAsUsd(),
+            style = MaterialTheme.typography.headlineMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            autoSize = TextAutoSize.StepBased(
+                minFontSize = MaterialTheme.typography.titleLarge.fontSize,
+                maxFontSize = MaterialTheme.typography.headlineMedium.fontSize,
+            ),
+        )
     }
 }
 
