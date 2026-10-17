@@ -24,7 +24,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
@@ -33,8 +32,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.WindowAdaptiveInfo
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -67,7 +64,7 @@ import me.prokhorov.coinfolio.theme.Spacing12
 import me.prokhorov.coinfolio.theme.Spacing16
 import me.prokhorov.coinfolio.theme.Spacing24
 import me.prokhorov.coinfolio.ui.BottomInset
-import me.prokhorov.coinfolio.ui.FadingPullToRefreshIndicator
+import me.prokhorov.coinfolio.ui.FadingPullToRefreshBox
 import me.prokhorov.coinfolio.ui.LocalBottomInset
 import me.prokhorov.coinfolio.ui.overlay.EdgeFadeBox
 import me.prokhorov.coinfolio.util.asMessage
@@ -112,7 +109,6 @@ fun PortfolioScreen(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PortfolioContent(
     state: PortfolioUiState,
@@ -124,7 +120,6 @@ private fun PortfolioContent(
     onCoinClick: (String) -> Unit,
 ) {
     val rows = state.portfolio.valuedHoldings
-    val pullToRefreshState = rememberPullToRefreshState()
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -135,45 +130,30 @@ private fun PortfolioContent(
             .add(WindowInsets(bottom = bottomInset.padding)),
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
-        PullToRefreshBox(
-            isRefreshing = state.isRefreshing,
-            onRefresh = onRefresh,
-            modifier = Modifier.fillMaxSize(),
-            state = pullToRefreshState,
-            indicator = {
-                // The list scrolls under the status bar, so the indicator starts below it.
-                FadingPullToRefreshIndicator(
-                    state = pullToRefreshState,
-                    isRefreshing = state.isRefreshing,
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .padding(top = innerPadding.calculateTopPadding()),
+        when {
+            state.isLoading && rows.isEmpty() -> LoadingState(contentPadding = innerPadding)
+
+            rows.isEmpty() && state.error != null -> {
+                ErrorState(
+                    message = state.error.asMessage(),
+                    onRetry = onRetry,
+                    contentPadding = innerPadding,
                 )
-            },
-        ) {
-            when {
-                state.isLoading && rows.isEmpty() -> LoadingState(contentPadding = innerPadding)
+            }
 
-                rows.isEmpty() && state.error != null -> {
-                    ErrorState(
-                        message = state.error.asMessage(),
-                        onRetry = onRetry,
-                        contentPadding = innerPadding,
-                    )
-                }
+            rows.isEmpty() -> EmptyState(contentPadding = innerPadding)
 
-                rows.isEmpty() -> EmptyState(contentPadding = innerPadding)
-
-                else -> {
-                    PortfolioPanes(
-                        portfolio = state.portfolio,
-                        contentPadding = innerPadding,
-                        isWideWindow = isWideWindow,
-                        // The bottom bar already covers the list, so it needs no fade there.
-                        hasBottomFade = !bottomInset.hasBottomBar,
-                        onCoinClick = onCoinClick,
-                    )
-                }
+            else -> {
+                PortfolioPanes(
+                    portfolio = state.portfolio,
+                    contentPadding = innerPadding,
+                    isWideWindow = isWideWindow,
+                    isRefreshing = state.isRefreshing,
+                    // The bottom bar already covers the list, so it needs no fade there.
+                    hasBottomFade = !bottomInset.hasBottomBar,
+                    onRefresh = onRefresh,
+                    onCoinClick = onCoinClick,
+                )
             }
         }
     }
@@ -227,7 +207,9 @@ private fun PortfolioPanes(
     portfolio: Portfolio,
     contentPadding: PaddingValues,
     isWideWindow: Boolean,
+    isRefreshing: Boolean,
     hasBottomFade: Boolean,
+    onRefresh: () -> Unit,
     onCoinClick: (String) -> Unit,
 ) {
     // both layouts use this one state, so a rotation keeps the scroll position.
@@ -239,7 +221,9 @@ private fun PortfolioPanes(
             portfolio = portfolio,
             listState = listState,
             contentPadding = contentPadding,
+            isRefreshing = isRefreshing,
             hasBottomFade = hasBottomFade,
+            onRefresh = onRefresh,
             onCoinClick = onCoinClick,
         )
     } else {
@@ -247,8 +231,10 @@ private fun PortfolioPanes(
             portfolio = portfolio,
             listState = listState,
             contentPadding = contentPadding,
+            isRefreshing = isRefreshing,
             hasTotalHeader = true,
             hasBottomFade = hasBottomFade,
+            onRefresh = onRefresh,
             onCoinClick = onCoinClick,
         )
     }
@@ -259,7 +245,9 @@ private fun TotalAndHoldingPanes(
     portfolio: Portfolio,
     listState: LazyListState,
     contentPadding: PaddingValues,
+    isRefreshing: Boolean,
     hasBottomFade: Boolean,
+    onRefresh: () -> Unit,
     onCoinClick: (String) -> Unit,
 ) {
     val layoutDirection = LocalLayoutDirection.current
@@ -283,8 +271,10 @@ private fun TotalAndHoldingPanes(
                 end = contentPadding.calculateEndPadding(layoutDirection),
                 bottom = contentPadding.calculateBottomPadding(),
             ),
+            isRefreshing = isRefreshing,
             hasTotalHeader = false,
             hasBottomFade = hasBottomFade,
+            onRefresh = onRefresh,
             onCoinClick = onCoinClick,
             modifier = Modifier.weight(1f),
         )
@@ -296,43 +286,51 @@ private fun HoldingList(
     portfolio: Portfolio,
     listState: LazyListState,
     contentPadding: PaddingValues,
+    isRefreshing: Boolean,
     hasTotalHeader: Boolean,
     hasBottomFade: Boolean,
+    onRefresh: () -> Unit,
     onCoinClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val layoutDirection = LocalLayoutDirection.current
 
-    EdgeFadeBox(
+    FadingPullToRefreshBox(
+        isRefreshing = isRefreshing,
+        onRefresh = onRefresh,
         contentPadding = contentPadding,
         modifier = modifier,
-        hasTopFade = true,
-        hasBottomFade = hasBottomFade,
-    ) { fadePadding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            state = listState,
-            contentPadding = PaddingValues(
-                start = fadePadding.calculateStartPadding(layoutDirection),
-                end = fadePadding.calculateEndPadding(layoutDirection),
-                top = fadePadding.calculateTopPadding(),
-                bottom = fadePadding.calculateBottomPadding() + Spacing16,
-            ),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            if (hasTotalHeader) {
-                item(key = TOTAL_HEADER_KEY) {
-                    TotalValueHeader(
-                        total = portfolio.totalValue,
-                        modifier = Modifier.fillMaxWidth(),
+    ) {
+        EdgeFadeBox(
+            contentPadding = contentPadding,
+            hasTopFade = true,
+            hasBottomFade = hasBottomFade,
+        ) { fadePadding ->
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                state = listState,
+                contentPadding = PaddingValues(
+                    start = fadePadding.calculateStartPadding(layoutDirection),
+                    end = fadePadding.calculateEndPadding(layoutDirection),
+                    top = fadePadding.calculateTopPadding(),
+                    bottom = fadePadding.calculateBottomPadding() + Spacing16,
+                ),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                if (hasTotalHeader) {
+                    item(key = TOTAL_HEADER_KEY) {
+                        TotalValueHeader(
+                            total = portfolio.totalValue,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+                items(portfolio.valuedHoldings, key = { it.holding.coinId }) { valuedHolding ->
+                    ValuedHoldingRow(
+                        valuedHolding = valuedHolding,
+                        onClick = { onCoinClick(valuedHolding.holding.coinId) },
                     )
                 }
-            }
-            items(portfolio.valuedHoldings, key = { it.holding.coinId }) { valuedHolding ->
-                ValuedHoldingRow(
-                    valuedHolding = valuedHolding,
-                    onClick = { onCoinClick(valuedHolding.holding.coinId) },
-                )
             }
         }
     }

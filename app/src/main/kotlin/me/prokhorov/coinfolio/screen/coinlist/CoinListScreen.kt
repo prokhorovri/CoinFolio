@@ -27,7 +27,6 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -38,8 +37,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -76,7 +73,7 @@ import me.prokhorov.coinfolio.theme.Spacing24
 import me.prokhorov.coinfolio.theme.Spacing8
 import me.prokhorov.coinfolio.theme.extendedColors
 import me.prokhorov.coinfolio.ui.BottomInset
-import me.prokhorov.coinfolio.ui.FadingPullToRefreshIndicator
+import me.prokhorov.coinfolio.ui.FadingPullToRefreshBox
 import me.prokhorov.coinfolio.ui.LocalBottomInset
 import me.prokhorov.coinfolio.ui.overlay.EdgeFadeBox
 import me.prokhorov.coinfolio.util.asMessage
@@ -119,7 +116,6 @@ fun CoinListScreen(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CoinListContent(
     state: CoinListUiState,
@@ -130,7 +126,6 @@ private fun CoinListContent(
     onQueryChange: (String) -> Unit,
     onCoinClick: (String) -> Unit,
 ) {
-    val pullToRefreshState = rememberPullToRefreshState()
     val focusManager = LocalFocusManager.current
 
     // The Scaffold and search field use the same top insets
@@ -168,32 +163,16 @@ private fun CoinListContent(
         val topBarHeight = innerPadding.calculateTopPadding() -
             topInsets.asPaddingValues().calculateTopPadding()
 
-        PullToRefreshBox(
-            isRefreshing = state.isRefreshing,
+        CoinListBody(
+            state = state,
+            contentPadding = innerPadding,
+            topBarHeight = topBarHeight,
+            // The bottom bar already covers the list, so it needs no fade there.
+            hasBottomFade = !bottomInset.hasBottomBar,
+            onRetry = onRetry,
             onRefresh = onRefresh,
-            modifier = Modifier.fillMaxSize(),
-            state = pullToRefreshState,
-            indicator = {
-                // Add top padding so the indicator appears below the search bar
-                FadingPullToRefreshIndicator(
-                    state = pullToRefreshState,
-                    isRefreshing = state.isRefreshing,
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .padding(top = innerPadding.calculateTopPadding()),
-                )
-            },
-        ) {
-            CoinListBody(
-                state = state,
-                contentPadding = innerPadding,
-                topBarHeight = topBarHeight,
-                // The bottom bar already covers the list, so it needs no fade there.
-                hasBottomFade = !bottomInset.hasBottomBar,
-                onRetry = onRetry,
-                onCoinClick = onCoinClick,
-            )
-        }
+            onCoinClick = onCoinClick,
+        )
     }
 }
 
@@ -205,6 +184,7 @@ private fun CoinListBody(
     topBarHeight: Dp,
     hasBottomFade: Boolean,
     onRetry: () -> Unit,
+    onRefresh: () -> Unit,
     onCoinClick: (String) -> Unit,
 ) {
     when {
@@ -228,7 +208,9 @@ private fun CoinListBody(
                 query = state.query,
                 contentPadding = contentPadding,
                 topBarHeight = topBarHeight,
+                isRefreshing = state.isRefreshing,
                 hasBottomFade = hasBottomFade,
+                onRefresh = onRefresh,
                 onCoinClick = onCoinClick,
             )
         }
@@ -282,7 +264,9 @@ private fun CoinList(
     query: String,
     contentPadding: PaddingValues,
     topBarHeight: Dp,
+    isRefreshing: Boolean,
     hasBottomFade: Boolean,
+    onRefresh: () -> Unit,
     onCoinClick: (String) -> Unit,
 ) {
     val layoutDirection = LocalLayoutDirection.current
@@ -297,39 +281,46 @@ private fun CoinList(
             }
     }
 
-    EdgeFadeBox(
+    // The top padding includes the search bar, so the indicator appears below it.
+    FadingPullToRefreshBox(
+        isRefreshing = isRefreshing,
+        onRefresh = onRefresh,
         contentPadding = contentPadding,
-        topBarHeight = topBarHeight,
-        hasTopFade = true,
-        hasBottomFade = hasBottomFade,
-    ) { fadePadding ->
-        LazyColumn(
-            // Full width, so a drag anywhere scrolls and refreshes. Only the items are limited.
-            modifier = Modifier.fillMaxSize(),
-            state = listState,
-            contentPadding = PaddingValues(
-                start = fadePadding.calculateStartPadding(layoutDirection),
-                end = fadePadding.calculateEndPadding(layoutDirection),
-                top = fadePadding.calculateTopPadding(),
-                bottom = fadePadding.calculateBottomPadding() + Spacing16,
-            ),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            // Keep the "not found" message as a list item so pull-to-refresh still works.
-            if (coins.isEmpty()) {
-                item(key = NOT_FOUND_KEY) {
-                    NotFoundMessage(query = query.trim())
+    ) {
+        EdgeFadeBox(
+            contentPadding = contentPadding,
+            topBarHeight = topBarHeight,
+            hasTopFade = true,
+            hasBottomFade = hasBottomFade,
+        ) { fadePadding ->
+            LazyColumn(
+                // Full width, so a drag anywhere scrolls and refreshes. Only the items are limited.
+                modifier = Modifier.fillMaxSize(),
+                state = listState,
+                contentPadding = PaddingValues(
+                    start = fadePadding.calculateStartPadding(layoutDirection),
+                    end = fadePadding.calculateEndPadding(layoutDirection),
+                    top = fadePadding.calculateTopPadding(),
+                    bottom = fadePadding.calculateBottomPadding() + Spacing16,
+                ),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                // Keep the "not found" message as a list item so pull-to-refresh still works.
+                if (coins.isEmpty()) {
+                    item(key = NOT_FOUND_KEY) {
+                        NotFoundMessage(query = query.trim())
+                    }
                 }
-            }
 
-            items(coins, key = Coin::id) { coin ->
-                CoinRow(
-                    coin = coin,
-                    onClick = {
-                        focusManager.clearFocus()
-                        onCoinClick(coin.id)
-                    },
-                )
+                items(coins, key = Coin::id) { coin ->
+                    CoinRow(
+                        coin = coin,
+                        onClick = {
+                            focusManager.clearFocus()
+                            onCoinClick(coin.id)
+                        },
+                    )
+                }
             }
         }
     }
