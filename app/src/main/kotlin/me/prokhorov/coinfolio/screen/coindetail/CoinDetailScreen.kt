@@ -78,6 +78,7 @@ import coil3.compose.AsyncImage
 import java.math.BigDecimal
 import kotlinx.coroutines.flow.drop
 import me.prokhorov.coinfolio.R
+import me.prokhorov.coinfolio.component.EdgeFadeBox
 import me.prokhorov.coinfolio.domain.model.CoinDetail
 import me.prokhorov.coinfolio.domain.result.AppError
 import me.prokhorov.coinfolio.theme.BackButtonBackgroundSize
@@ -89,7 +90,6 @@ import me.prokhorov.coinfolio.theme.Spacing24
 import me.prokhorov.coinfolio.theme.Spacing4
 import me.prokhorov.coinfolio.theme.Spacing8
 import me.prokhorov.coinfolio.theme.extendedColors
-import me.prokhorov.coinfolio.ui.overlay.EdgeFadeBox
 import me.prokhorov.coinfolio.util.QuantityInput
 import me.prokhorov.coinfolio.util.asMessage
 import me.prokhorov.coinfolio.util.formatAsCompact

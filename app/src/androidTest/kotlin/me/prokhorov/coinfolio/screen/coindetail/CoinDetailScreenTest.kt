@@ -27,6 +27,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import java.math.BigDecimal
 import me.prokhorov.coinfolio.R
+import me.prokhorov.coinfolio.component.BOTTOM_FADE_TAG
+import me.prokhorov.coinfolio.component.TOP_FADE_TAG
 import me.prokhorov.coinfolio.domain.result.Resource
 import me.prokhorov.coinfolio.domain.testing.FakeCoinRepository
 import me.prokhorov.coinfolio.domain.testing.FakeHoldingRepository
@@ -36,8 +38,6 @@ import me.prokhorov.coinfolio.domain.usecase.GetHoldingUseCase
 import me.prokhorov.coinfolio.domain.usecase.SaveHoldingUseCase
 import me.prokhorov.coinfolio.theme.CoinFolioTheme
 import me.prokhorov.coinfolio.theme.Spacing24
-import me.prokhorov.coinfolio.ui.overlay.BOTTOM_FADE_TAG
-import me.prokhorov.coinfolio.ui.overlay.TOP_FADE_TAG
 import me.prokhorov.coinfolio.util.formatAsUsd
 import org.junit.Rule
 import org.junit.Test

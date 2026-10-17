@@ -1,4 +1,4 @@
-package me.prokhorov.coinfolio.ui
+package me.prokhorov.coinfolio.component
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background

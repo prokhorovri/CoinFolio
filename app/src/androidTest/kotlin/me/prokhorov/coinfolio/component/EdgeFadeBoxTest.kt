@@ -1,4 +1,4 @@
-package me.prokhorov.coinfolio.ui.overlay
+package me.prokhorov.coinfolio.component
 
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.PaddingValues

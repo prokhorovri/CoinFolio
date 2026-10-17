@@ -40,14 +40,14 @@ import dev.chrisbanes.haze.blur.HazeColorEffect
 import dev.chrisbanes.haze.blur.hazeBlur
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
+import me.prokhorov.coinfolio.layout.BottomInset
+import me.prokhorov.coinfolio.layout.LocalBottomInset
 import me.prokhorov.coinfolio.navigation.AppNavGraph
 import me.prokhorov.coinfolio.navigation.NavigationType
 import me.prokhorov.coinfolio.navigation.TopLevelDestination
 import me.prokhorov.coinfolio.navigation.navigationType
 import me.prokhorov.coinfolio.navigation.rememberCoinFolioAppState
 import me.prokhorov.coinfolio.theme.CoinFolioTheme
-import me.prokhorov.coinfolio.ui.BottomInset
-import me.prokhorov.coinfolio.ui.LocalBottomInset
 import me.prokhorov.coinfolio.util.isWideWindow
 
 // Alpha of the bottom bar color over the blurred content.

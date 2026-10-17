@@ -52,10 +52,14 @@ import androidx.lifecycle.repeatOnLifecycle
 import coil3.compose.AsyncImage
 import java.math.BigDecimal
 import me.prokhorov.coinfolio.R
+import me.prokhorov.coinfolio.component.EdgeFadeBox
+import me.prokhorov.coinfolio.component.FadingPullToRefreshBox
 import me.prokhorov.coinfolio.domain.model.Coin
 import me.prokhorov.coinfolio.domain.model.Holding
 import me.prokhorov.coinfolio.domain.model.Portfolio
 import me.prokhorov.coinfolio.domain.model.ValuedHolding
+import me.prokhorov.coinfolio.layout.BottomInset
+import me.prokhorov.coinfolio.layout.LocalBottomInset
 import me.prokhorov.coinfolio.theme.CoinFolioTheme
 import me.prokhorov.coinfolio.theme.CoinIconSize
 import me.prokhorov.coinfolio.theme.ListMaxWidth
@@ -63,10 +67,6 @@ import me.prokhorov.coinfolio.theme.PortfolioTotalPaneWidth
 import me.prokhorov.coinfolio.theme.Spacing12
 import me.prokhorov.coinfolio.theme.Spacing16
 import me.prokhorov.coinfolio.theme.Spacing24
-import me.prokhorov.coinfolio.ui.BottomInset
-import me.prokhorov.coinfolio.ui.FadingPullToRefreshBox
-import me.prokhorov.coinfolio.ui.LocalBottomInset
-import me.prokhorov.coinfolio.ui.overlay.EdgeFadeBox
 import me.prokhorov.coinfolio.util.asMessage
 import me.prokhorov.coinfolio.util.formatAsQuantity
 import me.prokhorov.coinfolio.util.formatAsUsd

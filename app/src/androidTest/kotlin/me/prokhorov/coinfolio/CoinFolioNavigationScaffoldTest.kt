@@ -13,11 +13,11 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
+import me.prokhorov.coinfolio.layout.BottomInset
+import me.prokhorov.coinfolio.layout.LocalBottomInset
 import me.prokhorov.coinfolio.navigation.NavigationType
 import me.prokhorov.coinfolio.navigation.TopLevelDestination
 import me.prokhorov.coinfolio.theme.CoinFolioTheme
-import me.prokhorov.coinfolio.ui.BottomInset
-import me.prokhorov.coinfolio.ui.LocalBottomInset
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

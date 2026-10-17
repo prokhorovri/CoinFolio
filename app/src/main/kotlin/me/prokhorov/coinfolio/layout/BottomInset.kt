@@ -1,4 +1,4 @@
-package me.prokhorov.coinfolio.ui
+package me.prokhorov.coinfolio.layout
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.compositionLocalOf
