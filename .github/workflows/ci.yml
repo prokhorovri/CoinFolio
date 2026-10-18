@@ -96,6 +96,22 @@ jobs:
           cache-provider: basic
           cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/dev' }}
 
+      # The emulator needs about 7.5 GB for its data partition, and the runner has about 2.5 GB
+      # free. These folders hold tools that this build never uses: .NET, Haskell, CodeQL, Boost.
+      - name: Free disk space
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup \
+            /opt/hostedtoolcache/CodeQL /usr/local/share/boost
+          df -h /
+
+      # The emulator does not start without the PulseAudio library, even with no sound.
+      # The Ubuntu image of the runner does not have it.
+      - name: Install emulator libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpulse0
+
       # The emulator needs hardware acceleration. The runner has KVM, but only root can use it.
       - name: Enable KVM
         run: |
