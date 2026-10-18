@@ -110,6 +110,20 @@ jobs:
           ./gradlew :app:pixel6Api34DebugAndroidTest
           -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect
 
+      # TEMPORARY: debug why the emulator does not start. Remove before merging.
+      - name: Debug the emulator
+        if: failure()
+        run: |
+          ls -l /dev/kvm
+          "$ANDROID_HOME/emulator/emulator" -version | head -3
+          "$ANDROID_HOME/emulator/emulator" -accel-check
+          find "$HOME" -name "*.ini" -path "*avd*" 2>/dev/null
+          AVD_DIR=$(dirname "$(find "$HOME" -name "dev34_aosp_atd_x86_64_Pixel_6.ini" | head -1)")
+          echo "AVD dir: $AVD_DIR"
+          ANDROID_AVD_HOME="$AVD_DIR" timeout 120 "$ANDROID_HOME/emulator/emulator" \
+            -avd dev34_aosp_atd_x86_64_Pixel_6 -no-window -no-audio -no-snapshot \
+            -gpu swiftshader_indirect -verbose 2>&1 | tail -150 || true
+
       - name: Upload test reports
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
