@@ -3,9 +3,18 @@ package me.prokhorov.coinfolio.theme
 import androidx.compose.ui.unit.dp
 
 // Role tokens, named for what they control.
-val FadeExtraHeight = 24.dp
+val FadeBandHeight = 24.dp
 val CoinIconSize = 40.dp
 val CoinDetailIconSize = 64.dp
+val BackButtonBackgroundSize = 40.dp
+val BackButtonShadowElevation = 3.dp
+
+// Phones in portrait are narrower than 600dp. A bit more keeps the list phone-sized on wide
+// windows. Not a standard, just my design choice.
+val ListMaxWidth = 640.dp
+
+// The left pane with the portfolio total on wide windows. A design choice.
+val PortfolioTotalPaneWidth = 240.dp
 
 // Pull to refresh indicator.
 val RefreshIndicatorSize = 40.dp

@@ -2,20 +2,39 @@ package me.prokhorov.coinfolio.screen.coindetail
 
 import androidx.activity.ComponentActivity
 import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.adaptive.Posture
+import androidx.compose.material3.adaptive.WindowAdaptiveInfo
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.SemanticsActions.ScrollBy
+import androidx.compose.ui.semantics.SemanticsProperties.VerticalScrollAxisRange
+import androidx.compose.ui.test.DeviceConfigurationOverride
+import androidx.compose.ui.test.ForcedSize
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.window.core.layout.WindowSizeClass
 import com.google.common.truth.Truth.assertThat
 import java.math.BigDecimal
 import me.prokhorov.coinfolio.R
+import me.prokhorov.coinfolio.component.BOTTOM_FADE_TAG
+import me.prokhorov.coinfolio.component.TOP_FADE_TAG
 import me.prokhorov.coinfolio.domain.result.Resource
 import me.prokhorov.coinfolio.domain.testing.FakeCoinRepository
 import me.prokhorov.coinfolio.domain.testing.FakeHoldingRepository
@@ -24,6 +43,7 @@ import me.prokhorov.coinfolio.domain.usecase.GetCoinDetailUseCase
 import me.prokhorov.coinfolio.domain.usecase.GetHoldingUseCase
 import me.prokhorov.coinfolio.domain.usecase.SaveHoldingUseCase
 import me.prokhorov.coinfolio.theme.CoinFolioTheme
+import me.prokhorov.coinfolio.theme.Spacing24
 import me.prokhorov.coinfolio.util.formatAsUsd
 import org.junit.Rule
 import org.junit.Test
@@ -38,6 +58,15 @@ private const val QUANTITY = "2"
 
 // One digit over the limit. The field keeps the text, and the state shows the error.
 private const val TOO_LARGE_QUANTITY = "1234567890123456"
+
+// Shorter than the content, so the content must scroll.
+private val SHORT_SCREEN_HEIGHT = 300.dp
+
+// Much less than the content can scroll on the short screen.
+private const val SMALL_SCROLL_PIXELS = 100f
+
+// A phone in landscape, so the screen shows two panes.
+private val WIDE_WINDOW_SIZE = DpSize(891.dp, 411.dp)
 
 /**
  * Shows the real screen with a real ViewModel over the fakes. The coin id comes from
@@ -55,7 +84,8 @@ class CoinDetailScreenTest {
 
     private var isBackClicked = false
 
-    private fun showScreen() {
+    // A short screen makes the content scroll on any test device.
+    private fun showScreen(height: Dp? = null, windowSize: DpSize? = null) {
         // Built outside setContent, so a recomposition cannot create a second one.
         val viewModel = CoinDetailViewModel(
             getCoinDetailUseCase = GetCoinDetailUseCase(coinRepository),
@@ -66,12 +96,35 @@ class CoinDetailScreenTest {
 
         composeRule.setContent {
             CoinFolioTheme {
-                CoinDetailScreen(
-                    onBackClick = { isBackClicked = true },
-                    viewModel = viewModel,
-                )
+                Box(modifier = if (height != null) Modifier.height(height) else Modifier) {
+                    if (windowSize == null) {
+                        CoinDetailScreen(
+                            onBackClick = { isBackClicked = true },
+                            viewModel = viewModel,
+                        )
+                    } else {
+                        // The screen gets a window of this size and the matching size class.
+                        DeviceConfigurationOverride(
+                            DeviceConfigurationOverride.ForcedSize(windowSize),
+                        ) {
+                            CoinDetailScreen(
+                                onBackClick = { isBackClicked = true },
+                                viewModel = viewModel,
+                                windowAdaptiveInfo = windowAdaptiveInfo(windowSize),
+                            )
+                        }
+                    }
+                }
             }
         }
+    }
+
+    private fun windowAdaptiveInfo(windowSize: DpSize): WindowAdaptiveInfo {
+        val sizeClass = WindowSizeClass(
+            minWidthDp = windowSize.width.value.toInt(),
+            minHeightDp = windowSize.height.value.toInt(),
+        )
+        return WindowAdaptiveInfo(windowSizeClass = sizeClass, windowPosture = Posture())
     }
 
     private fun makeCoinAvailable() {
@@ -81,6 +134,13 @@ class CoinDetailScreenTest {
     }
 
     private fun getString(@StringRes id: Int): String = composeRule.activity.getString(id)
+
+    // The quantity field can scroll too, so it is left out.
+    private fun scrollContentBy(pixels: Float) {
+        composeRule
+            .onNode(hasScrollAction() and !hasSetTextAction())
+            .performSemanticsAction(ScrollBy) { scrollBy -> scrollBy(0f, pixels) }
+    }
 
     @Test
     fun shows_the_coin_summary() {
@@ -146,10 +206,135 @@ class CoinDetailScreenTest {
             .assertIsDisplayed()
     }
 
+    // The holding has its own pane, so the field is on screen next to the market data.
+    @Test
+    fun a_wide_window_shows_the_quantity_field_to_the_right_of_the_market_data() {
+        makeCoinAvailable()
+
+        showScreen(windowSize = WIDE_WINDOW_SIZE)
+
+        val marketData = composeRule
+            .onNodeWithText(getString(R.string.coin_detail_screen_market_data_title_text))
+        val quantityField = composeRule.onNode(hasSetTextAction())
+        marketData.assertIsDisplayed()
+        quantityField.assertIsDisplayed()
+        val marketDataRight = marketData.getUnclippedBoundsInRoot().right
+        assertThat(marketDataRight).isAtMost(quantityField.getUnclippedBoundsInRoot().left)
+    }
+
+    @Test
+    fun a_save_on_a_wide_window_shows_the_new_holding() {
+        makeCoinAvailable()
+        showScreen(windowSize = WIDE_WINDOW_SIZE)
+        composeRule.onNode(hasSetTextAction()).performTextInput(QUANTITY)
+
+        composeRule.onNodeWithText(getString(R.string.coin_detail_screen_save_text)).performClick()
+
+        composeRule.onNodeWithText("$QUANTITY ${COIN_SYMBOL.uppercase()}").assertIsDisplayed()
+    }
+
+    // The end of the content has room for the fade. So at the end, Save is not under it.
+    @Test
+    fun at_the_end_of_the_scroll_save_is_above_the_bottom_fade() {
+        makeCoinAvailable()
+        showScreen(height = SHORT_SCREEN_HEIGHT)
+
+        // Two nodes can scroll: the content and the quantity field (its text scrolls sideways).
+        // The quantity field is left out.
+        val content = composeRule.onNode(hasScrollAction() and !hasSetTextAction())
+        // Scrolls straight to the end on any screen size.
+        // Do not use swipeUp() here: after a swipe, composeRule.activity hung the test.
+        // Scrolls straight to the end.
+        val maxScroll = content.fetchSemanticsNode().config[VerticalScrollAxisRange].maxValue()
+        content.performSemanticsAction(ScrollBy) { scrollBy -> scrollBy(0f, maxScroll) }
+
+        val saveBottom = composeRule
+            .onNodeWithText(getString(R.string.coin_detail_screen_save_text))
+            .fetchSemanticsNode()
+            .boundsInRoot
+            .bottom
+        val fadeTop = composeRule
+            .onNodeWithTag(BOTTOM_FADE_TAG)
+            .fetchSemanticsNode()
+            .boundsInRoot
+            .top
+        // In pixels, the same unit the layout uses, so both sides are rounded the same way.
+        val columnPadding = with(composeRule.density) { Spacing24.roundToPx() }
+        // The Column has its own Spacing24 below Save. Without the room for the fade, Save would
+        // end right at the fade top.
+        assertThat(saveBottom).isAtMost(fadeTop - columnPadding)
+    }
+
+    // The content scrolls under the top bar, so it has a fade.
+    @Test
+    fun the_content_has_a_top_fade() {
+        makeCoinAvailable()
+
+        showScreen()
+
+        composeRule.onNodeWithTag(TOP_FADE_TAG).assertExists()
+    }
+
+    // At rest, nothing is under the bar.
+    @Test
+    fun the_content_starts_below_the_top_bar() {
+        makeCoinAvailable()
+
+        showScreen()
+
+        val barBottom = composeRule.onNodeWithTag(TOP_BAR_TAG).getUnclippedBoundsInRoot().bottom
+        val summaryTop = composeRule
+            .onNodeWithTag(COIN_SUMMARY_TAG)
+            .getUnclippedBoundsInRoot()
+            .top
+        assertThat(barBottom.value).isAtMost(summaryTop.value)
+    }
+
+    // The fade is only for content that scrolls.
+    @Test
+    fun the_error_state_has_no_top_fade() {
+        showScreen()
+
+        composeRule.onNodeWithTag(TOP_FADE_TAG).assertDoesNotExist()
+    }
+
     @Test
     fun a_click_on_back_reports_it() {
         makeCoinAvailable()
         showScreen()
+
+        composeRule.onNodeWithContentDescription(getString(R.string.back_text)).performClick()
+
+        assertThat(isBackClicked).isTrue()
+    }
+
+    // The title is the coin name. The test coin uses its id as the name.
+    @Test
+    fun a_scroll_hides_the_title() {
+        makeCoinAvailable()
+        showScreen(height = SHORT_SCREEN_HEIGHT)
+
+        scrollContentBy(SMALL_SCROLL_PIXELS)
+
+        composeRule.onNodeWithText(COIN_ID).assertDoesNotExist()
+    }
+
+    @Test
+    fun a_scroll_back_to_the_top_shows_the_title() {
+        makeCoinAvailable()
+        showScreen(height = SHORT_SCREEN_HEIGHT)
+        scrollContentBy(SMALL_SCROLL_PIXELS)
+
+        scrollContentBy(-SMALL_SCROLL_PIXELS)
+
+        composeRule.onNodeWithText(COIN_ID).assertIsDisplayed()
+    }
+
+    @Test
+    fun a_click_on_back_after_a_scroll_reports_it() {
+        makeCoinAvailable()
+        showScreen(height = SHORT_SCREEN_HEIGHT)
+        scrollContentBy(SMALL_SCROLL_PIXELS)
 
         composeRule.onNodeWithContentDescription(getString(R.string.back_text)).performClick()
 
