@@ -4,9 +4,13 @@ import androidx.activity.ComponentActivity
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.adaptive.Posture
+import androidx.compose.material3.adaptive.WindowAdaptiveInfo
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsActions.ScrollBy
 import androidx.compose.ui.semantics.SemanticsProperties.VerticalScrollAxisRange
+import androidx.compose.ui.test.DeviceConfigurationOverride
+import androidx.compose.ui.test.ForcedSize
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -21,9 +25,11 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.window.core.layout.WindowSizeClass
 import com.google.common.truth.Truth.assertThat
 import java.math.BigDecimal
 import me.prokhorov.coinfolio.R
@@ -59,6 +65,9 @@ private val SHORT_SCREEN_HEIGHT = 300.dp
 // Much less than the content can scroll on the short screen.
 private const val SMALL_SCROLL_PIXELS = 100f
 
+// A phone in landscape, so the screen shows two panes.
+private val WIDE_WINDOW_SIZE = DpSize(891.dp, 411.dp)
+
 /**
  * Shows the real screen with a real ViewModel over the fakes. The coin id comes from
  * [SavedStateHandle], like in the app. Method names use underscores. A space in a method name
@@ -76,7 +85,7 @@ class CoinDetailScreenTest {
     private var isBackClicked = false
 
     // A short screen makes the content scroll on any test device.
-    private fun showScreen(height: Dp? = null) {
+    private fun showScreen(height: Dp? = null, windowSize: DpSize? = null) {
         // Built outside setContent, so a recomposition cannot create a second one.
         val viewModel = CoinDetailViewModel(
             getCoinDetailUseCase = GetCoinDetailUseCase(coinRepository),
@@ -88,13 +97,34 @@ class CoinDetailScreenTest {
         composeRule.setContent {
             CoinFolioTheme {
                 Box(modifier = if (height != null) Modifier.height(height) else Modifier) {
-                    CoinDetailScreen(
-                        onBackClick = { isBackClicked = true },
-                        viewModel = viewModel,
-                    )
+                    if (windowSize == null) {
+                        CoinDetailScreen(
+                            onBackClick = { isBackClicked = true },
+                            viewModel = viewModel,
+                        )
+                    } else {
+                        // The screen gets a window of this size and the matching size class.
+                        DeviceConfigurationOverride(
+                            DeviceConfigurationOverride.ForcedSize(windowSize),
+                        ) {
+                            CoinDetailScreen(
+                                onBackClick = { isBackClicked = true },
+                                viewModel = viewModel,
+                                windowAdaptiveInfo = windowAdaptiveInfo(windowSize),
+                            )
+                        }
+                    }
                 }
             }
         }
+    }
+
+    private fun windowAdaptiveInfo(windowSize: DpSize): WindowAdaptiveInfo {
+        val sizeClass = WindowSizeClass(
+            minWidthDp = windowSize.width.value.toInt(),
+            minHeightDp = windowSize.height.value.toInt(),
+        )
+        return WindowAdaptiveInfo(windowSizeClass = sizeClass, windowPosture = Posture())
     }
 
     private fun makeCoinAvailable() {
@@ -174,6 +204,33 @@ class CoinDetailScreenTest {
         composeRule
             .onNodeWithText(getString(R.string.coin_detail_screen_saved_text))
             .assertIsDisplayed()
+    }
+
+    // The holding has its own pane, so the field is on screen next to the market data.
+    @Test
+    fun a_wide_window_shows_the_quantity_field_to_the_right_of_the_market_data() {
+        makeCoinAvailable()
+
+        showScreen(windowSize = WIDE_WINDOW_SIZE)
+
+        val marketData = composeRule
+            .onNodeWithText(getString(R.string.coin_detail_screen_market_data_title_text))
+        val quantityField = composeRule.onNode(hasSetTextAction())
+        marketData.assertIsDisplayed()
+        quantityField.assertIsDisplayed()
+        val marketDataRight = marketData.getUnclippedBoundsInRoot().right
+        assertThat(marketDataRight).isAtMost(quantityField.getUnclippedBoundsInRoot().left)
+    }
+
+    @Test
+    fun a_save_on_a_wide_window_shows_the_new_holding() {
+        makeCoinAvailable()
+        showScreen(windowSize = WIDE_WINDOW_SIZE)
+        composeRule.onNode(hasSetTextAction()).performTextInput(QUANTITY)
+
+        composeRule.onNodeWithText(getString(R.string.coin_detail_screen_save_text)).performClick()
+
+        composeRule.onNodeWithText("$QUANTITY ${COIN_SYMBOL.uppercase()}").assertIsDisplayed()
     }
 
     // The end of the content has room for the fade. So at the end, Save is not under it.
