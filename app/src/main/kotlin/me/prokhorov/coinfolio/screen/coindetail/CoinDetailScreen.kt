@@ -10,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -29,6 +30,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.verticalScroll
@@ -47,6 +49,8 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.adaptive.WindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
@@ -97,6 +101,7 @@ import me.prokhorov.coinfolio.util.formatAsCompactUsd
 import me.prokhorov.coinfolio.util.formatAsPercent
 import me.prokhorov.coinfolio.util.formatAsUsd
 import me.prokhorov.coinfolio.util.isGain
+import me.prokhorov.coinfolio.util.isWideWindow
 
 @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
 internal const val TOP_BAR_TAG = "top_bar"
@@ -108,6 +113,7 @@ internal const val COIN_SUMMARY_TAG = "coin_summary"
 fun CoinDetailScreen(
     onBackClick: () -> Unit,
     viewModel: CoinDetailViewModel = hiltViewModel(),
+    windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfoV2(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -140,6 +146,7 @@ fun CoinDetailScreen(
     CoinDetailContent(
         state = state,
         snackbarHostState = snackbarHostState,
+        isWideWindow = windowAdaptiveInfo.isWideWindow,
         onBackClick = onBackClick,
         onQuantityChange = { viewModel.onIntent(CoinDetailIntent.QuantityChanged(it)) },
         onSaveClick = { viewModel.onIntent(CoinDetailIntent.SaveHolding) },
@@ -152,14 +159,22 @@ fun CoinDetailScreen(
 private fun CoinDetailContent(
     state: CoinDetailUiState,
     snackbarHostState: SnackbarHostState,
+    isWideWindow: Boolean,
     onBackClick: () -> Unit,
     onQuantityChange: (String) -> Unit,
     onSaveClick: () -> Unit,
     onRetry: () -> Unit,
 ) {
-    val scrollState = rememberScrollState()
-    // True as soon as the content has moved up, even by one pixel.
-    val isScrolled = scrollState.canScrollBackward
+    // Both layouts use this one state, so a rotation keeps the scroll position.
+    val coinScrollState = rememberScrollState()
+    // The holding pane of the wide layout.
+    val holdingScrollState = rememberScrollState()
+    // Kept here, so a rotation keeps the text. HoldingSection sits at a different place in
+    // each layout.
+    val quantityState = rememberTextFieldState()
+
+    val isScrolled = coinScrollState.canScrollBackward ||
+        (isWideWindow && holdingScrollState.canScrollBackward)
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -207,7 +222,10 @@ private fun CoinDetailContent(
                     savedQuantity = state.savedQuantity,
                     holdingError = state.holdingError,
                     canSave = state.canSave,
-                    scrollState = scrollState,
+                    isWideWindow = isWideWindow,
+                    coinScrollState = coinScrollState,
+                    holdingScrollState = holdingScrollState,
+                    quantityState = quantityState,
                     contentPadding = innerPadding,
                     topBarHeight = topBarHeight,
                     onQuantityChange = onQuantityChange,
@@ -284,7 +302,10 @@ private fun CoinDetailBody(
     savedQuantity: BigDecimal?,
     holdingError: AppError?,
     canSave: Boolean,
-    scrollState: ScrollState,
+    isWideWindow: Boolean,
+    coinScrollState: ScrollState,
+    holdingScrollState: ScrollState,
+    quantityState: TextFieldState,
     contentPadding: PaddingValues,
     topBarHeight: Dp,
     onQuantityChange: (String) -> Unit,
@@ -323,14 +344,73 @@ private fun CoinDetailBody(
         // No fade over the keyboard. The scroll area ends at its top.
         hasBottomFade = !isKeyboardDocked,
     ) { fadePadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState)
-                .padding(fadePadding)
-                .padding(horizontal = Spacing16, vertical = Spacing24),
-            verticalArrangement = Arrangement.spacedBy(Spacing16),
-        ) {
+        CoinDetailPanes(
+            coin = coin,
+            quantityInput = quantityInput,
+            quantityError = quantityError,
+            savedQuantity = savedQuantity,
+            holdingError = holdingError,
+            canSave = canSave,
+            isWideWindow = isWideWindow,
+            coinScrollState = coinScrollState,
+            holdingScrollState = holdingScrollState,
+            quantityState = quantityState,
+            contentPadding = fadePadding,
+            onQuantityChange = onQuantityChange,
+            onSaveClick = onSaveClick,
+        )
+    }
+}
+
+// narrow: one pane.
+// wide: two panes - the coin on the left, the holding on the right.
+@Composable
+private fun CoinDetailPanes(
+    coin: CoinDetail,
+    quantityInput: String,
+    quantityError: QuantityError?,
+    savedQuantity: BigDecimal?,
+    holdingError: AppError?,
+    canSave: Boolean,
+    isWideWindow: Boolean,
+    coinScrollState: ScrollState,
+    holdingScrollState: ScrollState,
+    quantityState: TextFieldState,
+    contentPadding: PaddingValues,
+    onQuantityChange: (String) -> Unit,
+    onSaveClick: () -> Unit,
+) {
+    if (isWideWindow) {
+        Row(modifier = Modifier.fillMaxSize()) {
+            DetailPane(
+                scrollState = coinScrollState,
+                contentPadding = contentPadding,
+                modifier = Modifier.weight(1f),
+            ) {
+                CoinSummary(coin = coin)
+                HorizontalDivider()
+                MarketDataSection(coin = coin)
+            }
+            DetailPane(
+                scrollState = holdingScrollState,
+                contentPadding = contentPadding,
+                modifier = Modifier.weight(1f),
+            ) {
+                HoldingSection(
+                    symbol = coin.symbol,
+                    quantityInput = quantityInput,
+                    quantityError = quantityError,
+                    savedQuantity = savedQuantity,
+                    holdingError = holdingError,
+                    canSave = canSave,
+                    quantityState = quantityState,
+                    onQuantityChange = onQuantityChange,
+                    onSaveClick = onSaveClick,
+                )
+            }
+        }
+    } else {
+        DetailPane(scrollState = coinScrollState, contentPadding = contentPadding) {
             CoinSummary(coin = coin)
             HorizontalDivider()
             MarketDataSection(coin = coin)
@@ -342,11 +422,30 @@ private fun CoinDetailBody(
                 savedQuantity = savedQuantity,
                 holdingError = holdingError,
                 canSave = canSave,
+                quantityState = quantityState,
                 onQuantityChange = onQuantityChange,
                 onSaveClick = onSaveClick,
             )
         }
     }
+}
+
+@Composable
+private fun DetailPane(
+    scrollState: ScrollState,
+    contentPadding: PaddingValues,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+            .padding(contentPadding)
+            .padding(horizontal = Spacing16, vertical = Spacing24),
+        verticalArrangement = Arrangement.spacedBy(Spacing16),
+        content = content,
+    )
 }
 
 @Composable
@@ -455,12 +554,12 @@ private fun HoldingSection(
     savedQuantity: BigDecimal?,
     holdingError: AppError?,
     canSave: Boolean,
+    quantityState: TextFieldState,
     onQuantityChange: (String) -> Unit,
     onSaveClick: () -> Unit,
 ) {
     val errorMessage = holdingError?.asMessage()
     val focusManager = LocalFocusManager.current
-    val quantityState = rememberTextFieldState()
 
     val quantityErrorMessage = quantityError?.asMessage()
     val currentInput by rememberUpdatedState(quantityInput)
@@ -561,6 +660,17 @@ private fun QuantityError.asMessage(): String {
 @Preview(showBackground = true)
 @Composable
 private fun CoinDetailContentPreview() {
+    CoinDetailContentPreviewBody(isWideWindow = false)
+}
+
+@Preview(name = "Wide", showBackground = true, widthDp = 891, heightDp = 411)
+@Composable
+private fun CoinDetailContentWidePreview() {
+    CoinDetailContentPreviewBody(isWideWindow = true)
+}
+
+@Composable
+private fun CoinDetailContentPreviewBody(isWideWindow: Boolean) {
     CoinFolioTheme {
         CoinDetailContent(
             state = CoinDetailUiState(
@@ -585,6 +695,7 @@ private fun CoinDetailContentPreview() {
                 canSave = true,
             ),
             snackbarHostState = remember { SnackbarHostState() },
+            isWideWindow = isWideWindow,
             onBackClick = {},
             onQuantityChange = {},
             onSaveClick = {},
