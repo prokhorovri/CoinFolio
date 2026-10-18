@@ -9,18 +9,29 @@ Data comes from the free [CoinGecko API](https://www.coingecko.com/en/api).
 |---|---|---|---|
 | ![Coin list](docs/screenshots/coin_list.png) | ![Search](docs/screenshots/search.png) | ![Coin detail](docs/screenshots/coin_detail.png) | ![Portfolio](docs/screenshots/portfolio.png) |
 
+### Landscape
+
+| Coin list | Portfolio |
+|---|---|
+| ![Coin list in landscape](docs/screenshots/coin_list_landscape.png) | ![Portfolio in landscape](docs/screenshots/portfolio_landscape.png) |
+
+| Coin detail |
+|---|
+| ![Coin detail in landscape](docs/screenshots/coin_detail_landscape.png) |
+
 ## Features
 
 - Top 50 coins by market cap, with search and pull to refresh
 - Coin detail with market data
 - Portfolio: save how much of each coin you own and see the total value
 - Light and dark theme
+- Landscape and wide windows, with no lost state on rotation
 
 ## Tech stack
 
 | Area | Libraries |
 |---|---|
-| UI | Jetpack Compose, Material 3, Navigation Compose (type-safe routes), Coil |
+| UI | Jetpack Compose, Material 3, Navigation Compose (type-safe routes), Material 3 Adaptive, Coil, Haze |
 | DI | Hilt |
 | Async | Coroutines, StateFlow, SharedFlow |
 | Network | Retrofit, OkHttp, kotlinx.serialization |
@@ -71,6 +82,14 @@ DTOs and Room entities never leave `:data`.
   them for 30 seconds.
 - **Every screen has loading, error and empty states.** An error during a refresh goes to a
   snackbar, so the rows stay on screen.
+- **Layout follows the window width, not the orientation.** At 600dp and wider (the M3
+  "medium" width class), a navigation rail replaces the bottom bar. The portfolio and the coin
+  detail split into two panes, and the coin list gets a max width. A phone in split screen
+  stays narrow, so it keeps the bottom bar.
+- **No `NavigationSuiteScaffold`.** It places the content above the bar. The bottom bar here
+  blurs the content under it (Haze), so the content must go under the bar.
+- **Rotation keeps the state.** The scroll position, the search text and the typed quantity
+  stay, and rotation sends no new request.
 
 ## Tests and checks
 
