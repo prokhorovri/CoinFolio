@@ -4,7 +4,7 @@ import java.math.BigDecimal
 
 data class Coin(
     val id: String,
-    val symbol:  String,
+    val symbol: String,
     val name: String,
     val imageUrl: String,
     /** CoinGecko sends no price for some small or delisted coins. Then the screen shows a dash. */
