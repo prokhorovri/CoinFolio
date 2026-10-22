@@ -1,5 +1,7 @@
 # CoinFolio
 
+[![CI](https://github.com/prokhorovri/CoinFolio/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/prokhorovri/CoinFolio/actions/workflows/ci.yml?query=branch%3Amain)
+
 An Android app for live crypto prices and the value of the coins you own.
 Data comes from the free [CoinGecko API](https://www.coingecko.com/en/api).
 
@@ -39,6 +41,7 @@ Data comes from the free [CoinGecko API](https://www.coingecko.com/en/api).
 | Tests | JUnit 4, Truth, Turbine, Robolectric, MockWebServer, Compose UI Test |
 | Code quality | Spotless + ktlint, detekt, Android Lint, Dependency Analysis Gradle Plugin |
 | Build | Kotlin 2.4, Gradle 9.6, Android Gradle Plugin 9.2, version catalog, convention plugin |
+| CI/CD | GitHub Actions, Gradle managed devices, R8 |
 
 ## Architecture
 
@@ -96,16 +99,33 @@ DTOs and Room entities never leave `:data`.
 - Unit tests for use cases, ViewModels, mappers and input rules, with hand-written fakes
 - `CoinApi` against MockWebServer, Room on an in-memory database
 - Compose UI tests on a Gradle managed device, so no AVD setup is needed
-- Spotless, detekt, Android Lint and the dependency analysis fail the build on any finding
+- Spotless, detekt, Android Lint and dependency analysis checks fail the `check` task if they
+  find any issues
 
 ```bash
 ./gradlew verifyAll
 ```
 
+## CI/CD
+
+GitHub Actions runs three jobs on every pull request targeting `main` or `dev`:
+Static checks, Unit tests and UI tests. The UI tests run on the same Gradle managed
+device as locally.
+
+`main` and `dev` are protected. A direct push is rejected, and a pull request can be
+merged only when all three jobs pass.
+
+A tag like `v1.0.0` on `main` starts a release. The workflow runs the same three jobs.
+Then it builds a signed APK and AAB with R8 and checks that both files are signed,
+failing if either is not. It publishes both files on GitHub Releases, together with
+`mapping.txt` to help read crash stack traces. The keystore and its passwords are in
+GitHub Secrets.
+
 ## Build
 
 Open the project in Android Studio and run `app`. Needs Android 9 (API 28) or newer.
 No API key is needed.
+A local release build is unsigned unless the `SIGNING_*` environment variables are set.
 
 ## License
 
