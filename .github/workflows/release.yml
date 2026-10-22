@@ -1,0 +1,88 @@
+name: Release
+
+# Push a tag like v1.0.0 to start a release.
+# The workflow runs CI checks, builds signed APK and AAB files, and publishes them on GitHub.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  tag-on-main:
+    name: Check tag is on main
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # Fetch the full Git history to check that the tag points to a commit in main.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      # Fail if the tag commit is not in main.
+      - name: Fail if the tag commit is not in main
+        run: |
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::Tag $GITHUB_REF_NAME points to a commit that is not in main."
+            exit 1
+          fi
+
+  checks:
+    name: Checks
+    needs: tag-on-main
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    name: Build and publish
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-provider: basic
+          cache-read-only: true
+
+      # Store the keystore outside the repo. GitHub deletes it after the job.
+      - name: Decode the keystore
+        env:
+          SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+        run: echo "$SIGNING_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.jks"
+
+      - name: Build the release APK and AAB
+        env:
+          SIGNING_STORE_FILE: ${{ runner.temp }}/release.jks
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: ./gradlew :app:assembleRelease :app:bundleRelease
+
+      # Gradle can build unsigned files if signing secrets are missing.
+      # Check for the "jar verified." message because jarsigner may succeed for unsigned files.
+      - name: Fail if the APK or AAB is not signed
+        run: |
+          apksigner="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)/apksigner"
+          "$apksigner" verify --print-certs app/build/outputs/apk/release/app-release.apk
+          jarsigner -verify app/build/outputs/bundle/release/app-release.aab \
+            | grep -Fx "jar verified." > /dev/null
+
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir dist
+          cp app/build/outputs/apk/release/app-release.apk "dist/coinfolio-$GITHUB_REF_NAME.apk"
+          cp app/build/outputs/bundle/release/app-release.aab "dist/coinfolio-$GITHUB_REF_NAME.aab"
+          cp app/build/outputs/mapping/release/mapping.txt \
+            "dist/coinfolio-$GITHUB_REF_NAME-mapping.txt"
+          gh release create "$GITHUB_REF_NAME" dist/* --verify-tag --generate-notes

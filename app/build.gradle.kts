@@ -25,9 +25,27 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        val storeFilePath = providers.environmentVariable("SIGNING_STORE_FILE").orNull
+        if (storeFilePath != null) {
+            create("release") {
+                storeFile = file(storeFilePath)
+                storePassword = providers.environmentVariable("SIGNING_STORE_PASSWORD").get()
+                keyAlias = providers.environmentVariable("SIGNING_KEY_ALIAS").get()
+                keyPassword = providers.environmentVariable("SIGNING_KEY_PASSWORD").get()
+            }
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+            signingConfig = signingConfigs.findByName("release")
         }
     }
 
