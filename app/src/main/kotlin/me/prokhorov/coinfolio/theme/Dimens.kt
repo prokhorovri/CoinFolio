@@ -16,6 +16,12 @@ val ListMaxWidth = 640.dp
 // The left pane with the portfolio total on wide windows. A design choice.
 val PortfolioTotalPaneWidth = 240.dp
 
+// Bar widths in the loading placeholder rows. Design choices.
+val PlaceholderNameWidth = 96.dp
+val PlaceholderSymbolWidth = 40.dp
+val PlaceholderPriceWidth = 72.dp
+val PlaceholderChangeWidth = 48.dp
+
 // Pull to refresh indicator.
 val RefreshIndicatorSize = 40.dp
 val RefreshIndicatorSpinnerSize = 16.dp
