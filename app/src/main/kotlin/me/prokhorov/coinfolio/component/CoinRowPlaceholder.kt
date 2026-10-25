@@ -1,10 +1,8 @@
 package me.prokhorov.coinfolio.component
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -14,10 +12,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import me.prokhorov.coinfolio.theme.CoinFolioTheme
 import me.prokhorov.coinfolio.theme.CoinIconSize
 import me.prokhorov.coinfolio.theme.ListMaxWidth
@@ -63,18 +58,6 @@ fun CoinRowPlaceholder(modifier: Modifier = Modifier) {
                 width = PlaceholderChangeWidth,
             )
         }
-    }
-}
-
-// The bar uses the font size, inside a line with the given line height.
-@Composable
-private fun PlaceholderLine(style: TextStyle, width: Dp) {
-    val density = LocalDensity.current
-    val lineHeight = with(density) { style.lineHeight.toDp() }
-    val barHeight = with(density) { style.fontSize.toDp() }
-
-    Box(modifier = Modifier.height(lineHeight), contentAlignment = Alignment.Center) {
-        ShimmerBox(modifier = Modifier.size(width = width, height = barHeight))
     }
 }
 

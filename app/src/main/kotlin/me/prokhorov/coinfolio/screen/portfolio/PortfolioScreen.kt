@@ -24,7 +24,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
@@ -43,6 +42,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -54,8 +55,10 @@ import androidx.lifecycle.repeatOnLifecycle
 import coil3.compose.AsyncImage
 import java.math.BigDecimal
 import me.prokhorov.coinfolio.R
+import me.prokhorov.coinfolio.component.CoinRowPlaceholder
 import me.prokhorov.coinfolio.component.EdgeFadeBox
 import me.prokhorov.coinfolio.component.FadingPullToRefreshBox
+import me.prokhorov.coinfolio.component.PlaceholderLine
 import me.prokhorov.coinfolio.domain.model.Coin
 import me.prokhorov.coinfolio.domain.model.Holding
 import me.prokhorov.coinfolio.domain.model.Portfolio
@@ -65,6 +68,8 @@ import me.prokhorov.coinfolio.layout.LocalBottomInset
 import me.prokhorov.coinfolio.theme.CoinFolioTheme
 import me.prokhorov.coinfolio.theme.CoinIconSize
 import me.prokhorov.coinfolio.theme.ListMaxWidth
+import me.prokhorov.coinfolio.theme.PlaceholderTotalLabelWidth
+import me.prokhorov.coinfolio.theme.PlaceholderTotalValueWidth
 import me.prokhorov.coinfolio.theme.PortfolioTotalPaneWidth
 import me.prokhorov.coinfolio.theme.Spacing12
 import me.prokhorov.coinfolio.theme.Spacing16
@@ -76,6 +81,11 @@ import me.prokhorov.coinfolio.util.isWideWindow
 
 // The header key for the list
 private const val TOTAL_HEADER_KEY = "total"
+
+// The number of holdings is not known before they load, so the rows fill the screen.
+// MB - refactor later somehow.
+// A Column would compose all of them. A LazyColumn composes only the visible ones.
+private const val PLACEHOLDER_ROW_COUNT = 50
 
 @Composable
 fun PortfolioScreen(
@@ -133,7 +143,13 @@ private fun PortfolioContent(
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
         when {
-            state.isLoading && rows.isEmpty() -> LoadingState(contentPadding = innerPadding)
+            state.isLoading && rows.isEmpty() -> {
+                LoadingState(
+                    contentPadding = innerPadding,
+                    isWideWindow = isWideWindow,
+                    hasBottomFade = !bottomInset.hasBottomBar,
+                )
+            }
 
             rows.isEmpty() && state.error != null -> {
                 ErrorState(
@@ -161,15 +177,62 @@ private fun PortfolioContent(
     }
 }
 
+// Same layout as PortfolioPanes, so nothing moves when the holdings arrive.
 @Composable
-private fun LoadingState(contentPadding: PaddingValues) {
-    Box(
+private fun LoadingState(
+    contentPadding: PaddingValues,
+    isWideWindow: Boolean,
+    hasBottomFade: Boolean,
+) {
+    val layoutDirection = LocalLayoutDirection.current
+    val loadingText = stringResource(R.string.loading_text)
+
+    Row(
         modifier = Modifier
             .fillMaxSize()
-            .padding(contentPadding),
-        contentAlignment = Alignment.Center,
+            .clearAndSetSemantics { contentDescription = loadingText },
     ) {
-        CircularProgressIndicator()
+        if (isWideWindow) {
+            TotalValuePlaceholder(
+                modifier = Modifier
+                    .padding(
+                        start = contentPadding.calculateStartPadding(layoutDirection),
+                        top = contentPadding.calculateTopPadding(),
+                    )
+                    .width(PortfolioTotalPaneWidth),
+            )
+        }
+        // The same fade as HoldingList. It also adds the same top padding.
+        EdgeFadeBox(
+            contentPadding = if (isWideWindow) {
+                PaddingValues(
+                    top = contentPadding.calculateTopPadding(),
+                    end = contentPadding.calculateEndPadding(layoutDirection),
+                    bottom = contentPadding.calculateBottomPadding(),
+                )
+            } else {
+                contentPadding
+            },
+            modifier = Modifier.weight(1f),
+            hasTopFade = true,
+            hasBottomFade = hasBottomFade,
+        ) { fadePadding ->
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = fadePadding,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                userScrollEnabled = false,
+            ) {
+                if (!isWideWindow) {
+                    item(key = TOTAL_HEADER_KEY) {
+                        TotalValuePlaceholder(modifier = Modifier.fillMaxWidth())
+                    }
+                }
+                items(count = PLACEHOLDER_ROW_COUNT, key = { index -> index }) {
+                    CoinRowPlaceholder()
+                }
+            }
+        }
     }
 }
 
@@ -363,6 +426,23 @@ private fun TotalValueHeader(total: BigDecimal, modifier: Modifier = Modifier) {
     }
 }
 
+// A loading total with the same size as TotalValueHeader.
+@Composable
+private fun TotalValuePlaceholder(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.padding(horizontal = Spacing16, vertical = Spacing24),
+    ) {
+        PlaceholderLine(
+            style = MaterialTheme.typography.labelMedium,
+            width = PlaceholderTotalLabelWidth,
+        )
+        PlaceholderLine(
+            style = MaterialTheme.typography.headlineMedium,
+            width = PlaceholderTotalValueWidth,
+        )
+    }
+}
+
 /*
  * A row with no Coin shows the coin id and dashes. The market call can miss a coin, and the
  * quantity is still worth showing.
@@ -464,6 +544,33 @@ private fun PortfolioContentPreviewBody(isWideWindow: Boolean) {
             ),
             snackbarHostState = remember { SnackbarHostState() },
             // A wide window has the rail, so no bottom bar.
+            bottomInset = BottomInset(padding = 0.dp, hasBottomBar = !isWideWindow),
+            isWideWindow = isWideWindow,
+            onRetry = {},
+            onRefresh = {},
+            onCoinClick = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PortfolioContentLoadingPreview() {
+    PortfolioContentLoadingPreviewBody(isWideWindow = false)
+}
+
+@Preview(name = "Wide loading", showBackground = true, widthDp = 891, heightDp = 411)
+@Composable
+private fun PortfolioContentWideLoadingPreview() {
+    PortfolioContentLoadingPreviewBody(isWideWindow = true)
+}
+
+@Composable
+private fun PortfolioContentLoadingPreviewBody(isWideWindow: Boolean) {
+    CoinFolioTheme {
+        PortfolioContent(
+            state = PortfolioUiState(isLoading = true),
+            snackbarHostState = remember { SnackbarHostState() },
             bottomInset = BottomInset(padding = 0.dp, hasBottomBar = !isWideWindow),
             isWideWindow = isWideWindow,
             onRetry = {},
