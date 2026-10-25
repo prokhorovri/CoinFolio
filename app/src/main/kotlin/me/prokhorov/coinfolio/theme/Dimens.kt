@@ -23,6 +23,13 @@ val PlaceholderPriceWidth = 72.dp
 val PlaceholderChangeWidth = 48.dp
 val PlaceholderTotalLabelWidth = 64.dp
 val PlaceholderTotalValueWidth = 160.dp
+val PlaceholderDetailPriceWidth = 128.dp
+val PlaceholderRankWidth = 48.dp
+val PlaceholderSectionTitleWidth = 112.dp
+val PlaceholderStatLabelWidth = 80.dp
+val PlaceholderStatValueWidth = 88.dp
+val PlaceholderHoldingQuantityWidth = 72.dp
+val PlaceholderButtonWidth = 80.dp
 
 // Pull to refresh indicator.
 val RefreshIndicatorSize = 40.dp

@@ -27,7 +27,6 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
@@ -52,6 +51,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -177,7 +178,7 @@ private fun CoinDetailContent(
                 )
             }
 
-            state.coin == null -> LoadingState(contentPadding = innerPadding)
+            state.coin == null -> LoadingState(isWideWindow, innerPadding, topBarHeight)
 
             else -> {
                 CoinDetailBody(
@@ -201,15 +202,53 @@ private fun CoinDetailContent(
     }
 }
 
+// The same panes as CoinDetailPanes, so nothing moves when the coin arrives.
 @Composable
-private fun LoadingState(contentPadding: PaddingValues) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(contentPadding),
-        contentAlignment = Alignment.Center,
-    ) {
-        CircularProgressIndicator()
+private fun LoadingState(isWideWindow: Boolean, contentPadding: PaddingValues, topBarHeight: Dp) {
+    val loadingText = stringResource(R.string.loading_text)
+    // DetailPane needs a scroll state. These never move, because scrolling is off.
+    val coinScrollState = rememberScrollState()
+    val holdingScrollState = rememberScrollState()
+
+    CoinDetailFrame(
+        contentPadding = contentPadding,
+        topBarHeight = topBarHeight,
+        modifier = Modifier.clearAndSetSemantics { contentDescription = loadingText },
+    ) { fadePadding ->
+        if (isWideWindow) {
+            Row(modifier = Modifier.fillMaxSize()) {
+                DetailPane(
+                    scrollState = coinScrollState,
+                    contentPadding = fadePadding,
+                    modifier = Modifier.weight(1f),
+                    isScrollEnabled = false,
+                ) {
+                    CoinSummaryPlaceholder()
+                    HorizontalDivider()
+                    MarketDataPlaceholder()
+                }
+                DetailPane(
+                    scrollState = holdingScrollState,
+                    contentPadding = fadePadding,
+                    modifier = Modifier.weight(1f),
+                    isScrollEnabled = false,
+                ) {
+                    HoldingSectionPlaceholder()
+                }
+            }
+        } else {
+            DetailPane(
+                scrollState = coinScrollState,
+                contentPadding = fadePadding,
+                isScrollEnabled = false,
+            ) {
+                CoinSummaryPlaceholder()
+                HorizontalDivider()
+                MarketDataPlaceholder()
+                HorizontalDivider()
+                HoldingSectionPlaceholder()
+            }
+        }
     }
 }
 
@@ -247,39 +286,7 @@ private fun CoinDetailBody(
     onQuantityChange: (String) -> Unit,
     onSaveClick: () -> Unit,
 ) {
-    val layoutDirection = LocalLayoutDirection.current
-    // Checks the keyboard height, not its visibility. A floating keyboard covers no edge,
-    // so the fade stays.
-    val isKeyboardDocked = WindowInsets.ime.asPaddingValues().calculateBottomPadding() > 0.dp
-
-    // The part of the navigation bar that the keyboard does not cover. Zero when the keyboard
-    // is docked.
-    val navigationBarHeight = WindowInsets.navigationBars
-        .exclude(WindowInsets.ime)
-        .asPaddingValues()
-        .calculateBottomPadding()
-
-    EdgeFadeBox(
-        // The scroll area reaches the top and the bottom of the screen.
-        // The content scrolls under the top bar and the navigation bar.
-        modifier = Modifier
-            .padding(
-                start = contentPadding.calculateStartPadding(layoutDirection),
-                end = contentPadding.calculateEndPadding(layoutDirection),
-            )
-            // Stop the scroll area at the keyboard, so the text field stays visible.
-            .imePadding(),
-        // Add space for the top bar and the navigation bar, so the first and last items can
-        // scroll out from under them.
-        contentPadding = PaddingValues(
-            top = contentPadding.calculateTopPadding(),
-            bottom = navigationBarHeight,
-        ),
-        topBarHeight = topBarHeight,
-        hasTopFade = true,
-        // No fade over the keyboard. The scroll area ends at its top.
-        hasBottomFade = !isKeyboardDocked,
-    ) { fadePadding ->
+    CoinDetailFrame(contentPadding = contentPadding, topBarHeight = topBarHeight) { fadePadding ->
         CoinDetailPanes(
             coin = coin,
             quantityInput = quantityInput,
@@ -296,6 +303,50 @@ private fun CoinDetailBody(
             onSaveClick = onSaveClick,
         )
     }
+}
+
+// The scroll area with the edge fades. The coin and the loading placeholder both use it.
+@Composable
+private fun CoinDetailFrame(
+    contentPadding: PaddingValues,
+    topBarHeight: Dp,
+    modifier: Modifier = Modifier,
+    content: @Composable (fadePadding: PaddingValues) -> Unit,
+) {
+    val layoutDirection = LocalLayoutDirection.current
+    // Checks the keyboard height, not its visibility. A floating keyboard covers no edge,
+    // so the fade stays.
+    val isKeyboardDocked = WindowInsets.ime.asPaddingValues().calculateBottomPadding() > 0.dp
+
+    // The part of the navigation bar that the keyboard does not cover. Zero when the keyboard
+    // is docked.
+    val navigationBarHeight = WindowInsets.navigationBars
+        .exclude(WindowInsets.ime)
+        .asPaddingValues()
+        .calculateBottomPadding()
+
+    EdgeFadeBox(
+        // The scroll area reaches the top and the bottom of the screen.
+        // The content scrolls under the top bar and the navigation bar.
+        modifier = modifier
+            .padding(
+                start = contentPadding.calculateStartPadding(layoutDirection),
+                end = contentPadding.calculateEndPadding(layoutDirection),
+            )
+            // Stop the scroll area at the keyboard, so the text field stays visible.
+            .imePadding(),
+        // Add space for the top bar and the navigation bar, so the first and last items can
+        // scroll out from under them.
+        contentPadding = PaddingValues(
+            top = contentPadding.calculateTopPadding(),
+            bottom = navigationBarHeight,
+        ),
+        topBarHeight = topBarHeight,
+        hasTopFade = true,
+        // No fade over the keyboard. The scroll area ends at its top.
+        hasBottomFade = !isKeyboardDocked,
+        content = content,
+    )
 }
 
 // narrow: one pane.
@@ -371,12 +422,13 @@ private fun DetailPane(
     scrollState: ScrollState,
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
+    isScrollEnabled: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .verticalScroll(scrollState)
+            .verticalScroll(scrollState, enabled = isScrollEnabled)
             .padding(contentPadding)
             .padding(horizontal = Spacing16, vertical = Spacing24),
         verticalArrangement = Arrangement.spacedBy(Spacing16),
@@ -421,6 +473,33 @@ private fun CoinDetailContentPreviewBody(isWideWindow: Boolean) {
                 quantityInput = "0.5",
                 canSave = true,
             ),
+            snackbarHostState = remember { SnackbarHostState() },
+            isWideWindow = isWideWindow,
+            onBackClick = {},
+            onQuantityChange = {},
+            onSaveClick = {},
+            onRetry = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun CoinDetailContentLoadingPreview() {
+    CoinDetailContentLoadingPreviewBody(isWideWindow = false)
+}
+
+@Preview(name = "Wide loading", showBackground = true, widthDp = 891, heightDp = 411)
+@Composable
+private fun CoinDetailContentWideLoadingPreview() {
+    CoinDetailContentLoadingPreviewBody(isWideWindow = true)
+}
+
+@Composable
+private fun CoinDetailContentLoadingPreviewBody(isWideWindow: Boolean) {
+    CoinFolioTheme {
+        CoinDetailContent(
+            state = CoinDetailUiState(coinId = "bitcoin"),
             snackbarHostState = remember { SnackbarHostState() },
             isWideWindow = isWideWindow,
             onBackClick = {},
