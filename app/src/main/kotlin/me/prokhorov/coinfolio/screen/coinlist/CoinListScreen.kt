@@ -26,7 +26,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -50,6 +49,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -63,6 +64,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import coil3.compose.AsyncImage
 import java.math.BigDecimal
 import me.prokhorov.coinfolio.R
+import me.prokhorov.coinfolio.component.CoinRowPlaceholder
 import me.prokhorov.coinfolio.component.EdgeFadeBox
 import me.prokhorov.coinfolio.component.FadingPullToRefreshBox
 import me.prokhorov.coinfolio.domain.model.Coin
@@ -82,6 +84,13 @@ import me.prokhorov.coinfolio.util.formatAsUsd
 import me.prokhorov.coinfolio.util.isGain
 
 private const val NOT_FOUND_KEY = "not_found_key"
+
+// As many rows as the real list. LazyColumn composes only the visible ones, so this count works
+// on any screen. A Column would compose all of them.
+// To switch to a Column, count the rows that fit on the screen,
+// for example with BoxWithConstraints - MB later.
+// TODO: Refactor: move to a shared place so the API and screen use the same value.
+private const val PLACEHOLDER_ROW_COUNT = 50
 
 @Composable
 fun CoinListScreen(
@@ -127,6 +136,7 @@ private fun CoinListContent(
     onCoinClick: (String) -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
+    val isWaitingForCoins = state.isLoading && state.coins.isEmpty()
 
     // The Scaffold and search field use the same top insets
     val topInsets = ScaffoldDefaults.contentWindowInsets
@@ -138,10 +148,12 @@ private fun CoinListContent(
             // While the bar is shown, its height replaces the top of contentWindowInsets. The
             // bottom and the sides still come from contentWindowInsets.
 
-            // There is nothing to search before the coins arrive.
-            if (state.coins.isNotEmpty()) {
+            // The field is disabled while loading. It is shown, so the rows don't move down
+            // when the coins arrive. The error and empty states have nothing to search.
+            if (state.coins.isNotEmpty() || isWaitingForCoins) {
                 SearchField(
                     query = state.query,
+                    enabled = !isWaitingForCoins,
                     onQueryChange = onQueryChange,
                     onSearch = { focusManager.clearFocus() },
                     // With a top bar, Scaffold leaves the status bar to the bar itself.
@@ -219,13 +231,20 @@ private fun CoinListBody(
 
 @Composable
 private fun LoadingState(contentPadding: PaddingValues) {
-    Box(
+    val loadingText = stringResource(R.string.loading_text)
+
+    // The rows have nothing for TalkBack to read, so the list itself says "Loading".
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(contentPadding),
-        contentAlignment = Alignment.Center,
+            .clearAndSetSemantics { contentDescription = loadingText },
+        contentPadding = contentPadding,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        userScrollEnabled = false,
     ) {
-        CircularProgressIndicator()
+        items(count = PLACEHOLDER_ROW_COUNT, key = { index -> index }) {
+            CoinRowPlaceholder()
+        }
     }
 }
 
@@ -329,6 +348,7 @@ private fun CoinList(
 @Composable
 private fun SearchField(
     query: String,
+    enabled: Boolean,
     onQueryChange: (String) -> Unit,
     onSearch: () -> Unit,
     modifier: Modifier = Modifier,
@@ -342,6 +362,7 @@ private fun SearchField(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = Spacing16, vertical = Spacing8),
+        enabled = enabled,
         placeholder = { Text(text = stringResource(R.string.coin_list_screen_search_hint_text)) },
         leadingIcon = {
             Icon(painter = painterResource(R.drawable.ic_search), contentDescription = null)
@@ -365,8 +386,10 @@ private fun SearchField(
         colors = TextFieldDefaults.colors(
             focusedContainerColor = containerColor,
             unfocusedContainerColor = containerColor,
+            disabledContainerColor = containerColor,
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent,
+            disabledIndicatorColor = Color.Transparent,
         ),
     )
 }
@@ -451,6 +474,22 @@ private fun CoinListContentPreview() {
     CoinFolioTheme {
         CoinListContent(
             state = CoinListUiState(coins = coins, filteredCoins = coins),
+            snackbarHostState = remember { SnackbarHostState() },
+            bottomInset = BottomInset(padding = 0.dp, hasBottomBar = true),
+            onRetry = {},
+            onRefresh = {},
+            onQueryChange = {},
+            onCoinClick = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun CoinListContentLoadingPreview() {
+    CoinFolioTheme {
+        CoinListContent(
+            state = CoinListUiState(isLoading = true),
             snackbarHostState = remember { SnackbarHostState() },
             bottomInset = BottomInset(padding = 0.dp, hasBottomBar = true),
             onRetry = {},
