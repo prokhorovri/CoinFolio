@@ -107,6 +107,9 @@ Compose:
     # so the rule requires an explicit allowlist.
     # LocalExtendedColors: theme colors that Material 3 does not provide.
     # LocalBottomInset: what covers the bottom edge of a screen. It is layout, not data.
+    # LocalShimmerWave: the one shimmer animation of a loading area. It is drawing state,
+    # not data.
     allowedCompositionLocals:
       - 'LocalExtendedColors'
       - 'LocalBottomInset'
+      - 'LocalShimmerWave'
