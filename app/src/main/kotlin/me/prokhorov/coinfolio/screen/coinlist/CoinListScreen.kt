@@ -20,13 +20,14 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -50,6 +51,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -65,6 +68,8 @@ import java.math.BigDecimal
 import me.prokhorov.coinfolio.R
 import me.prokhorov.coinfolio.component.EdgeFadeBox
 import me.prokhorov.coinfolio.component.FadingPullToRefreshBox
+import me.prokhorov.coinfolio.component.ShimmerHost
+import me.prokhorov.coinfolio.component.shimmer
 import me.prokhorov.coinfolio.domain.model.Coin
 import me.prokhorov.coinfolio.layout.BottomInset
 import me.prokhorov.coinfolio.layout.LocalBottomInset
@@ -82,6 +87,23 @@ import me.prokhorov.coinfolio.util.formatAsUsd
 import me.prokhorov.coinfolio.util.isGain
 
 private const val NOT_FOUND_KEY = "not_found_key"
+
+// As many rows as the real list. LazyColumn composes only the visible ones, so this count works
+// on any screen. A Column would compose all of them.
+// To switch to a Column, count the rows that fit on the screen,
+// for example with BoxWithConstraints - MB later.
+// TODO: Refactor: move to a shared place so the API and screen use the same value.
+private const val PLACEHOLDER_ROW_COUNT = 50
+
+// Sample data that gives the loading rows the size of real rows.
+private val PLACEHOLDER_COIN = Coin(
+    id = "placeholder",
+    symbol = "btc",
+    name = "Bitcoin",
+    imageUrl = "",
+    currentPrice = BigDecimal("65000.12"),
+    priceChangePercent24h = BigDecimal("2.34"),
+)
 
 @Composable
 fun CoinListScreen(
@@ -138,10 +160,12 @@ private fun CoinListContent(
             // While the bar is shown, its height replaces the top of contentWindowInsets. The
             // bottom and the sides still come from contentWindowInsets.
 
-            // There is nothing to search before the coins arrive.
-            if (state.coins.isNotEmpty()) {
+            // While loading, the field is shown but disabled, so the list does not move
+            // when the coins arrive. There is nothing to search after an error.
+            if (state.coins.isNotEmpty() || state.isLoading) {
                 SearchField(
                     query = state.query,
+                    enabled = state.coins.isNotEmpty(),
                     onQueryChange = onQueryChange,
                     onSearch = { focusManager.clearFocus() },
                     // With a top bar, Scaffold leaves the status bar to the bar itself.
@@ -189,7 +213,11 @@ private fun CoinListBody(
 ) {
     when {
         state.isLoading && state.coins.isEmpty() -> {
-            LoadingState(contentPadding = contentPadding)
+            LoadingState(
+                contentPadding = contentPadding,
+                topBarHeight = topBarHeight,
+                hasBottomFade = hasBottomFade,
+            )
         }
 
         state.coins.isEmpty() && state.error != null -> {
@@ -218,14 +246,22 @@ private fun CoinListBody(
 }
 
 @Composable
-private fun LoadingState(contentPadding: PaddingValues) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(contentPadding),
-        contentAlignment = Alignment.Center,
-    ) {
-        CircularProgressIndicator()
+private fun LoadingState(contentPadding: PaddingValues, topBarHeight: Dp, hasBottomFade: Boolean) {
+    val loadingText = stringResource(R.string.loading_text)
+
+    ShimmerHost {
+        CoinListFrame(
+            contentPadding = contentPadding,
+            topBarHeight = topBarHeight,
+            hasBottomFade = hasBottomFade,
+            // A screen reader says "Loading" once instead of reading the sample rows.
+            modifier = Modifier.clearAndSetSemantics { contentDescription = loadingText },
+            userScrollEnabled = false,
+        ) {
+            items(count = PLACEHOLDER_ROW_COUNT, key = { index -> index }) {
+                CoinRow(coin = PLACEHOLDER_COIN, onClick = {}, isPlaceholder = true)
+            }
+        }
     }
 }
 
@@ -269,7 +305,6 @@ private fun CoinList(
     onRefresh: () -> Unit,
     onCoinClick: (String) -> Unit,
 ) {
-    val layoutDirection = LocalLayoutDirection.current
     val focusManager = LocalFocusManager.current
     val listState = rememberLazyListState()
 
@@ -287,48 +322,73 @@ private fun CoinList(
         onRefresh = onRefresh,
         contentPadding = contentPadding,
     ) {
-        EdgeFadeBox(
+        CoinListFrame(
             contentPadding = contentPadding,
             topBarHeight = topBarHeight,
-            hasTopFade = true,
             hasBottomFade = hasBottomFade,
-        ) { fadePadding ->
-            LazyColumn(
-                // Full width, so a drag anywhere scrolls and refreshes. Only the items are limited.
-                modifier = Modifier.fillMaxSize(),
-                state = listState,
-                contentPadding = PaddingValues(
-                    start = fadePadding.calculateStartPadding(layoutDirection),
-                    end = fadePadding.calculateEndPadding(layoutDirection),
-                    top = fadePadding.calculateTopPadding(),
-                    bottom = fadePadding.calculateBottomPadding() + Spacing16,
-                ),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                // Keep the "not found" message as a list item so pull-to-refresh still works.
-                if (coins.isEmpty()) {
-                    item(key = NOT_FOUND_KEY) {
-                        NotFoundMessage(query = query.trim())
-                    }
-                }
-
-                items(coins, key = Coin::id) { coin ->
-                    CoinRow(
-                        coin = coin,
-                        onClick = {
-                            focusManager.clearFocus()
-                            onCoinClick(coin.id)
-                        },
-                    )
+            listState = listState,
+        ) {
+            // Keep the "not found" message as a list item so pull-to-refresh still works.
+            if (coins.isEmpty()) {
+                item(key = NOT_FOUND_KEY) {
+                    NotFoundMessage(query = query.trim())
                 }
             }
+
+            items(coins, key = Coin::id) { coin ->
+                CoinRow(
+                    coin = coin,
+                    onClick = {
+                        focusManager.clearFocus()
+                        onCoinClick(coin.id)
+                    },
+                )
+            }
         }
+    }
+}
+
+// Both coin rows and loading rows use this list, so they line up.
+@Composable
+private fun CoinListFrame(
+    contentPadding: PaddingValues,
+    topBarHeight: Dp,
+    hasBottomFade: Boolean,
+    modifier: Modifier = Modifier,
+    listState: LazyListState = rememberLazyListState(),
+    userScrollEnabled: Boolean = true,
+    content: LazyListScope.() -> Unit,
+) {
+    val layoutDirection = LocalLayoutDirection.current
+
+    EdgeFadeBox(
+        contentPadding = contentPadding,
+        modifier = modifier,
+        topBarHeight = topBarHeight,
+        hasTopFade = true,
+        hasBottomFade = hasBottomFade,
+    ) { fadePadding ->
+        LazyColumn(
+            // Full width, so a drag anywhere scrolls and refreshes. Only the items are limited.
+            modifier = Modifier.fillMaxSize(),
+            state = listState,
+            contentPadding = PaddingValues(
+                start = fadePadding.calculateStartPadding(layoutDirection),
+                end = fadePadding.calculateEndPadding(layoutDirection),
+                top = fadePadding.calculateTopPadding(),
+                bottom = fadePadding.calculateBottomPadding() + Spacing16,
+            ),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            userScrollEnabled = userScrollEnabled,
+            content = content,
+        )
     }
 }
 
 @Composable
 private fun SearchField(
     query: String,
+    enabled: Boolean,
     onQueryChange: (String) -> Unit,
     onSearch: () -> Unit,
     modifier: Modifier = Modifier,
@@ -342,6 +402,7 @@ private fun SearchField(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = Spacing16, vertical = Spacing8),
+        enabled = enabled,
         placeholder = { Text(text = stringResource(R.string.coin_list_screen_search_hint_text)) },
         leadingIcon = {
             Icon(painter = painterResource(R.drawable.ic_search), contentDescription = null)
@@ -365,8 +426,10 @@ private fun SearchField(
         colors = TextFieldDefaults.colors(
             focusedContainerColor = containerColor,
             unfocusedContainerColor = containerColor,
+            disabledContainerColor = containerColor,
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent,
+            disabledIndicatorColor = Color.Transparent,
         ),
     )
 }
@@ -383,37 +446,49 @@ private fun NotFoundMessage(query: String) {
 }
 
 @Composable
-private fun CoinRow(coin: Coin, onClick: () -> Unit) {
+private fun CoinRow(coin: Coin, onClick: () -> Unit, isPlaceholder: Boolean = false) {
     Row(
         modifier = Modifier
             .widthIn(max = ListMaxWidth)
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(enabled = !isPlaceholder, onClick = onClick)
             .padding(horizontal = Spacing16, vertical = Spacing12),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         AsyncImage(
             model = coin.imageUrl,
             contentDescription = coin.name,
-            modifier = Modifier.size(CoinIconSize),
+            modifier = Modifier
+                .size(CoinIconSize)
+                .shimmer(isVisible = isPlaceholder, shape = CircleShape),
         )
         Column(
             modifier = Modifier
                 .padding(horizontal = Spacing12)
                 .weight(1f),
         ) {
-            Text(text = coin.name, style = MaterialTheme.typography.bodyLarge)
-            Text(text = coin.symbol.uppercase(), style = MaterialTheme.typography.bodySmall)
+            Text(
+                text = coin.name,
+                modifier = Modifier.shimmer(isVisible = isPlaceholder),
+                style = MaterialTheme.typography.bodyLarge,
+            )
+            Text(
+                text = coin.symbol.uppercase(),
+                modifier = Modifier.shimmer(isVisible = isPlaceholder),
+                style = MaterialTheme.typography.bodySmall,
+            )
         }
         Column(horizontalAlignment = Alignment.End) {
             Text(
                 text = coin.currentPrice?.formatAsUsd() ?: stringResource(R.string.no_value_text),
+                modifier = Modifier.shimmer(isVisible = isPlaceholder),
                 style = MaterialTheme.typography.bodyLarge,
             )
 
             val percent = coin.priceChangePercent24h
             Text(
                 text = percent?.formatAsPercent() ?: stringResource(R.string.no_value_text),
+                modifier = Modifier.shimmer(isVisible = isPlaceholder),
                 color = when {
                     percent == null -> Color.Unspecified
                     percent.isGain() -> MaterialTheme.extendedColors.positive
@@ -451,6 +526,23 @@ private fun CoinListContentPreview() {
     CoinFolioTheme {
         CoinListContent(
             state = CoinListUiState(coins = coins, filteredCoins = coins),
+            snackbarHostState = remember { SnackbarHostState() },
+            bottomInset = BottomInset(padding = 0.dp, hasBottomBar = true),
+            onRetry = {},
+            onRefresh = {},
+            onQueryChange = {},
+            onCoinClick = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Preview(name = "Wide", showBackground = true, widthDp = 891, heightDp = 411)
+@Composable
+private fun CoinListContentLoadingPreview() {
+    CoinFolioTheme {
+        CoinListContent(
+            state = CoinListUiState(isLoading = true),
             snackbarHostState = remember { SnackbarHostState() },
             bottomInset = BottomInset(padding = 0.dp, hasBottomBar = true),
             onRetry = {},

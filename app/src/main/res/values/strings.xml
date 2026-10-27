@@ -6,6 +6,7 @@
     <string name="retry_text">Retry</string>
     <string name="back_text">Back</string>
     <string name="clear_text">Clear</string>
+    <string name="loading_text">Loading</string>
     <string name="no_value_text">—</string>
     <!--endregion-->
 
