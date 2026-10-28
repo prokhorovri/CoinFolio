@@ -83,33 +83,26 @@ fun ShimmerHost(content: @Composable () -> Unit) {
  * Needs a [ShimmerHost] above it.
  */
 fun Modifier.shimmer(isVisible: Boolean, shape: Shape? = null): Modifier {
-    return this then ShimmerElement(isVisible, shape)
+    return if (isVisible) this then ShimmerElement(shape) else this
 }
 
-private data class ShimmerElement(
-    val isVisible: Boolean,
-    val shape: Shape?,
-) : ModifierNodeElement<ShimmerNode>() {
+private data class ShimmerElement(val shape: Shape?) : ModifierNodeElement<ShimmerNode>() {
 
-    override fun create(): ShimmerNode = ShimmerNode(isVisible, shape)
+    override fun create(): ShimmerNode = ShimmerNode(shape)
 
     override fun update(node: ShimmerNode) {
-        node.isVisible = isVisible
         node.shape = shape
         node.invalidateDraw()
     }
 
     override fun InspectorInfo.inspectableProperties() {
         name = "shimmer"
-        properties["isVisible"] = isVisible
         properties["shape"] = shape
     }
 }
 
-private class ShimmerNode(
-    var isVisible: Boolean,
-    var shape: Shape?,
-) : Modifier.Node(),
+private class ShimmerNode(var shape: Shape?) :
+    Modifier.Node(),
     DrawModifierNode,
     GlobalPositionAwareModifierNode,
     CompositionLocalConsumerModifierNode {
@@ -131,11 +124,6 @@ private class ShimmerNode(
     }
 
     override fun ContentDrawScope.draw() {
-        if (!isVisible) {
-            drawContent()
-            return
-        }
-
         val wave = checkNotNull(currentValueOf(LocalShimmerWave)) {
             "Modifier.shimmer needs a ShimmerHost above it"
         }
