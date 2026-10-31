@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -14,8 +15,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import me.prokhorov.coinfolio.R
+import me.prokhorov.coinfolio.component.ShapePlaceholder
+import me.prokhorov.coinfolio.component.ShimmerFrame
+import me.prokhorov.coinfolio.component.TextPlaceholder
 import me.prokhorov.coinfolio.domain.model.CoinDetail
 import me.prokhorov.coinfolio.theme.CoinDetailIconSize
 import me.prokhorov.coinfolio.theme.Spacing16
@@ -126,5 +131,52 @@ private fun CoinStatRow(label: String, value: String) {
     ) {
         Text(text = label, style = MaterialTheme.typography.bodyMedium)
         Text(text = value, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+@Composable
+internal fun CoinSummaryPlaceholder() {
+    ShimmerFrame {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Spacing16),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ShapePlaceholder(modifier = Modifier.size(CoinDetailIconSize), shape = CircleShape)
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing4)) {
+                TextPlaceholder(style = MaterialTheme.typography.bodyMedium, width = 40.dp)
+                TextPlaceholder(style = MaterialTheme.typography.headlineSmall, width = 140.dp)
+                TextPlaceholder(style = MaterialTheme.typography.bodyMedium, width = 56.dp)
+                TextPlaceholder(style = MaterialTheme.typography.bodySmall, width = 48.dp)
+            }
+        }
+    }
+}
+
+@Composable
+internal fun MarketDataSectionPlaceholder() {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing8)) {
+        Text(
+            text = stringResource(R.string.coin_detail_screen_market_data_title_text),
+            style = MaterialTheme.typography.titleMedium,
+        )
+        ShimmerFrame {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing8)) {
+                repeat(times = 6) {
+                    CoinStatRowPlaceholder()
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CoinStatRowPlaceholder() {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        TextPlaceholder(style = MaterialTheme.typography.bodyMedium, width = 80.dp)
+        TextPlaceholder(style = MaterialTheme.typography.bodyMedium, width = 72.dp)
     }
 }
