@@ -1,5 +1,9 @@
 package me.prokhorov.coinfolio.screen.coinlist
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,7 +30,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -50,6 +53,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -65,6 +70,10 @@ import java.math.BigDecimal
 import me.prokhorov.coinfolio.R
 import me.prokhorov.coinfolio.component.EdgeFadeBox
 import me.prokhorov.coinfolio.component.FadingPullToRefreshBox
+import me.prokhorov.coinfolio.component.RepeatToFillColumn
+import me.prokhorov.coinfolio.component.ShapePlaceholder
+import me.prokhorov.coinfolio.component.ShimmerFrame
+import me.prokhorov.coinfolio.component.TextPlaceholder
 import me.prokhorov.coinfolio.domain.model.Coin
 import me.prokhorov.coinfolio.layout.BottomInset
 import me.prokhorov.coinfolio.layout.LocalBottomInset
@@ -187,45 +196,72 @@ private fun CoinListBody(
     onRefresh: () -> Unit,
     onCoinClick: (String) -> Unit,
 ) {
-    when {
-        state.isLoading && state.coins.isEmpty() -> {
-            LoadingState(contentPadding = contentPadding)
-        }
+    // The placeholder fades out while the result fades in.
+    // Each fading copy gets its own state, so on Retry the old copy still shows the error.
+    // contentKey: only the start or the end of loading starts a fade.
+    AnimatedContent(
+        targetState = state,
+        transitionSpec = { fadeIn() togetherWith fadeOut() },
+        contentKey = { it.isLoading && it.coins.isEmpty() },
+        label = "coin list loading",
+    ) { shownState ->
+        when {
+            shownState.isLoading && shownState.coins.isEmpty() -> {
+                LoadingState(contentPadding = contentPadding, hasBottomFade = hasBottomFade)
+            }
 
-        state.coins.isEmpty() && state.error != null -> {
-            ErrorState(
-                message = state.error.asMessage(),
-                onRetry = onRetry,
-                contentPadding = contentPadding,
-            )
-        }
+            shownState.coins.isEmpty() && shownState.error != null -> {
+                ErrorState(
+                    message = shownState.error.asMessage(),
+                    onRetry = onRetry,
+                    contentPadding = contentPadding,
+                )
+            }
 
-        state.coins.isEmpty() -> EmptyState(contentPadding = contentPadding)
+            shownState.coins.isEmpty() -> EmptyState(contentPadding = contentPadding)
 
-        else -> {
-            CoinList(
-                coins = state.filteredCoins,
-                query = state.query,
-                contentPadding = contentPadding,
-                topBarHeight = topBarHeight,
-                isRefreshing = state.isRefreshing,
-                hasBottomFade = hasBottomFade,
-                onRefresh = onRefresh,
-                onCoinClick = onCoinClick,
-            )
+            else -> {
+                CoinList(
+                    coins = shownState.filteredCoins,
+                    query = shownState.query,
+                    contentPadding = contentPadding,
+                    topBarHeight = topBarHeight,
+                    isRefreshing = shownState.isRefreshing,
+                    hasBottomFade = hasBottomFade,
+                    onRefresh = onRefresh,
+                    onCoinClick = onCoinClick,
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun LoadingState(contentPadding: PaddingValues) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(contentPadding),
-        contentAlignment = Alignment.Center,
-    ) {
-        CircularProgressIndicator()
+private fun LoadingState(contentPadding: PaddingValues, hasBottomFade: Boolean) {
+    val layoutDirection = LocalLayoutDirection.current
+    val loadingText = stringResource(R.string.loading_text)
+
+    EdgeFadeBox(
+        contentPadding = contentPadding,
+        // A screen reader says "Loading" once instead of reading the placeholder rows.
+        modifier = Modifier.clearAndSetSemantics { contentDescription = loadingText },
+        hasTopFade = true,
+        hasBottomFade = hasBottomFade,
+    ) { fadePadding ->
+        ShimmerFrame {
+            // No bottom padding: the rows go under the bottom fade, like a scrolled list.
+            RepeatToFillColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(
+                        start = fadePadding.calculateStartPadding(layoutDirection),
+                        end = fadePadding.calculateEndPadding(layoutDirection),
+                        top = fadePadding.calculateTopPadding(),
+                    ),
+            ) {
+                CoinRowPlaceholder()
+            }
+        }
     }
 }
 
@@ -422,6 +458,48 @@ private fun CoinRow(coin: Coin, onClick: () -> Unit) {
                 style = MaterialTheme.typography.bodySmall,
             )
         }
+    }
+}
+
+@Composable
+private fun CoinRowPlaceholder() {
+    Row(
+        modifier = Modifier
+            .widthIn(max = ListMaxWidth)
+            .fillMaxWidth()
+            .padding(horizontal = Spacing16, vertical = Spacing12),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        ShapePlaceholder(modifier = Modifier.size(CoinIconSize), shape = CircleShape)
+        Column(
+            modifier = Modifier
+                .padding(horizontal = Spacing12)
+                .weight(1f),
+        ) {
+            TextPlaceholder(style = MaterialTheme.typography.bodyLarge, width = 96.dp)
+            TextPlaceholder(style = MaterialTheme.typography.bodySmall, width = 40.dp)
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            TextPlaceholder(style = MaterialTheme.typography.bodyLarge, width = 72.dp)
+            TextPlaceholder(style = MaterialTheme.typography.bodySmall, width = 48.dp)
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Preview(name = "Wide", showBackground = true, widthDp = 891, heightDp = 411)
+@Composable
+private fun CoinListContentLoadingPreview() {
+    CoinFolioTheme {
+        CoinListContent(
+            state = CoinListUiState(isLoading = true),
+            snackbarHostState = remember { SnackbarHostState() },
+            bottomInset = BottomInset(padding = 0.dp, hasBottomBar = true),
+            onRetry = {},
+            onRefresh = {},
+            onQueryChange = {},
+            onCoinClick = {},
+        )
     }
 }
 
