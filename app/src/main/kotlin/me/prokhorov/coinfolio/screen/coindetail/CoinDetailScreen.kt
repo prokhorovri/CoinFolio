@@ -1,9 +1,11 @@
 package me.prokhorov.coinfolio.screen.coindetail
 
 import androidx.annotation.VisibleForTesting
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -168,31 +170,71 @@ private fun CoinDetailContent(
         val topBarHeight = innerPadding.calculateTopPadding() -
             TopAppBarDefaults.windowInsets.asPaddingValues().calculateTopPadding()
 
+        CoinDetailStates(
+            state = state,
+            isWideWindow = isWideWindow,
+            coinScrollState = coinScrollState,
+            holdingScrollState = holdingScrollState,
+            quantityState = quantityState,
+            contentPadding = innerPadding,
+            topBarHeight = topBarHeight,
+            onQuantityChange = onQuantityChange,
+            onSaveClick = onSaveClick,
+            onRetry = onRetry,
+        )
+    }
+}
+
+@Composable
+private fun CoinDetailStates(
+    state: CoinDetailUiState,
+    isWideWindow: Boolean,
+    coinScrollState: ScrollState,
+    holdingScrollState: ScrollState,
+    quantityState: TextFieldState,
+    contentPadding: PaddingValues,
+    topBarHeight: Dp,
+    onQuantityChange: (String) -> Unit,
+    onSaveClick: () -> Unit,
+    onRetry: () -> Unit,
+) {
+    AnimatedContent(
+        targetState = state,
+        transitionSpec = { fadeIn() togetherWith fadeOut() },
+        contentKey = { it.coin == null && it.error == null },
+        label = "coin detail loading",
+    ) { shownState ->
         @Suppress("IntroduceWhenSubject")
         when {
-            state.coin == null && state.error != null -> {
+            shownState.coin == null && shownState.error != null -> {
                 ErrorState(
-                    message = state.error.asMessage(),
+                    message = shownState.error.asMessage(),
                     onRetry = onRetry,
-                    contentPadding = innerPadding,
+                    contentPadding = contentPadding,
                 )
             }
 
-            state.coin == null -> LoadingState(innerPadding, topBarHeight, isWideWindow)
+            shownState.coin == null -> {
+                LoadingState(
+                    contentPadding = contentPadding,
+                    topBarHeight = topBarHeight,
+                    isWideWindow = isWideWindow,
+                )
+            }
 
             else -> {
                 CoinDetailBody(
-                    coin = state.coin,
-                    quantityInput = state.quantityInput,
-                    quantityError = state.quantityError,
-                    savedQuantity = state.savedQuantity,
-                    holdingError = state.holdingError,
-                    canSave = state.canSave,
+                    coin = shownState.coin,
+                    quantityInput = shownState.quantityInput,
+                    quantityError = shownState.quantityError,
+                    savedQuantity = shownState.savedQuantity,
+                    holdingError = shownState.holdingError,
+                    canSave = shownState.canSave,
                     isWideWindow = isWideWindow,
                     coinScrollState = coinScrollState,
                     holdingScrollState = holdingScrollState,
                     quantityState = quantityState,
-                    contentPadding = innerPadding,
+                    contentPadding = contentPadding,
                     topBarHeight = topBarHeight,
                     onQuantityChange = onQuantityChange,
                     onSaveClick = onSaveClick,
