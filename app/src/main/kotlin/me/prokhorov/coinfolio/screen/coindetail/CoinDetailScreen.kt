@@ -1,9 +1,11 @@
 package me.prokhorov.coinfolio.screen.coindetail
 
 import androidx.annotation.VisibleForTesting
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,7 +29,6 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
@@ -52,6 +53,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -167,31 +170,71 @@ private fun CoinDetailContent(
         val topBarHeight = innerPadding.calculateTopPadding() -
             TopAppBarDefaults.windowInsets.asPaddingValues().calculateTopPadding()
 
+        CoinDetailStates(
+            state = state,
+            isWideWindow = isWideWindow,
+            coinScrollState = coinScrollState,
+            holdingScrollState = holdingScrollState,
+            quantityState = quantityState,
+            contentPadding = innerPadding,
+            topBarHeight = topBarHeight,
+            onQuantityChange = onQuantityChange,
+            onSaveClick = onSaveClick,
+            onRetry = onRetry,
+        )
+    }
+}
+
+@Composable
+private fun CoinDetailStates(
+    state: CoinDetailUiState,
+    isWideWindow: Boolean,
+    coinScrollState: ScrollState,
+    holdingScrollState: ScrollState,
+    quantityState: TextFieldState,
+    contentPadding: PaddingValues,
+    topBarHeight: Dp,
+    onQuantityChange: (String) -> Unit,
+    onSaveClick: () -> Unit,
+    onRetry: () -> Unit,
+) {
+    AnimatedContent(
+        targetState = state,
+        transitionSpec = { fadeIn() togetherWith fadeOut() },
+        contentKey = { it.coin == null && it.error == null },
+        label = "coin detail loading",
+    ) { shownState ->
         @Suppress("IntroduceWhenSubject")
         when {
-            state.coin == null && state.error != null -> {
+            shownState.coin == null && shownState.error != null -> {
                 ErrorState(
-                    message = state.error.asMessage(),
+                    message = shownState.error.asMessage(),
                     onRetry = onRetry,
-                    contentPadding = innerPadding,
+                    contentPadding = contentPadding,
                 )
             }
 
-            state.coin == null -> LoadingState(contentPadding = innerPadding)
+            shownState.coin == null -> {
+                LoadingState(
+                    contentPadding = contentPadding,
+                    topBarHeight = topBarHeight,
+                    isWideWindow = isWideWindow,
+                )
+            }
 
             else -> {
                 CoinDetailBody(
-                    coin = state.coin,
-                    quantityInput = state.quantityInput,
-                    quantityError = state.quantityError,
-                    savedQuantity = state.savedQuantity,
-                    holdingError = state.holdingError,
-                    canSave = state.canSave,
+                    coin = shownState.coin,
+                    quantityInput = shownState.quantityInput,
+                    quantityError = shownState.quantityError,
+                    savedQuantity = shownState.savedQuantity,
+                    holdingError = shownState.holdingError,
+                    canSave = shownState.canSave,
                     isWideWindow = isWideWindow,
                     coinScrollState = coinScrollState,
                     holdingScrollState = holdingScrollState,
                     quantityState = quantityState,
-                    contentPadding = innerPadding,
+                    contentPadding = contentPadding,
                     topBarHeight = topBarHeight,
                     onQuantityChange = onQuantityChange,
                     onSaveClick = onSaveClick,
@@ -202,14 +245,66 @@ private fun CoinDetailContent(
 }
 
 @Composable
-private fun LoadingState(contentPadding: PaddingValues) {
-    Box(
+private fun LoadingState(contentPadding: PaddingValues, topBarHeight: Dp, isWideWindow: Boolean) {
+    val layoutDirection = LocalLayoutDirection.current
+    val loadingText = stringResource(R.string.loading_text)
+
+    EdgeFadeBox(
+        contentPadding = PaddingValues(
+            top = contentPadding.calculateTopPadding(),
+            bottom = contentPadding.calculateBottomPadding(),
+        ),
         modifier = Modifier
             .fillMaxSize()
-            .padding(contentPadding),
-        contentAlignment = Alignment.Center,
-    ) {
-        CircularProgressIndicator()
+            .padding(
+                start = contentPadding.calculateStartPadding(layoutDirection),
+                end = contentPadding.calculateEndPadding(layoutDirection),
+            )
+            .clearAndSetSemantics { contentDescription = loadingText },
+        topBarHeight = topBarHeight,
+        hasTopFade = true,
+        hasBottomFade = true,
+    ) { fadePadding ->
+        // no bottom padding: the Column does not scroll, so the padding would cut the content
+        val paneModifier = Modifier
+            .padding(
+                top = fadePadding.calculateTopPadding() + Spacing24,
+                start = fadePadding.calculateStartPadding(layoutDirection),
+                end = fadePadding.calculateEndPadding(layoutDirection),
+            )
+            .padding(horizontal = Spacing16)
+        val paneArrangement = Arrangement.spacedBy(Spacing16)
+
+        if (isWideWindow) {
+            Row {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .then(paneModifier),
+                    verticalArrangement = paneArrangement,
+                ) {
+                    CoinSummaryPlaceholder()
+                    HorizontalDivider()
+                    MarketDataSectionPlaceholder()
+                }
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .then(paneModifier),
+                    verticalArrangement = paneArrangement,
+                ) {
+                    HoldingSectionPlaceholder()
+                }
+            }
+        } else {
+            Column(modifier = paneModifier, verticalArrangement = paneArrangement) {
+                CoinSummaryPlaceholder()
+                HorizontalDivider()
+                MarketDataSectionPlaceholder()
+                HorizontalDivider()
+                HoldingSectionPlaceholder()
+            }
+        }
     }
 }
 
@@ -382,6 +477,33 @@ private fun DetailPane(
         verticalArrangement = Arrangement.spacedBy(Spacing16),
         content = content,
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun CoinDetailContentLoadingPreview() {
+    CoinDetailContentLoadingPreviewBody(isWideWindow = false)
+}
+
+@Preview(name = "Wide", showBackground = true, widthDp = 891, heightDp = 411)
+@Composable
+private fun CoinDetailContentLoadingWidePreview() {
+    CoinDetailContentLoadingPreviewBody(isWideWindow = true)
+}
+
+@Composable
+private fun CoinDetailContentLoadingPreviewBody(isWideWindow: Boolean) {
+    CoinFolioTheme {
+        CoinDetailContent(
+            state = CoinDetailUiState(coinId = "bitcoin"),
+            snackbarHostState = remember { SnackbarHostState() },
+            isWideWindow = isWideWindow,
+            onBackClick = {},
+            onQuantityChange = {},
+            onSaveClick = {},
+            onRetry = {},
+        )
+    }
 }
 
 @Preview(showBackground = true)

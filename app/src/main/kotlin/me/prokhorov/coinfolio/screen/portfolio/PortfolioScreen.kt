@@ -1,5 +1,9 @@
 package me.prokhorov.coinfolio.screen.portfolio
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,9 +26,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
@@ -43,6 +47,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -56,6 +62,10 @@ import java.math.BigDecimal
 import me.prokhorov.coinfolio.R
 import me.prokhorov.coinfolio.component.EdgeFadeBox
 import me.prokhorov.coinfolio.component.FadingPullToRefreshBox
+import me.prokhorov.coinfolio.component.RepeatToFillColumn
+import me.prokhorov.coinfolio.component.ShapePlaceholder
+import me.prokhorov.coinfolio.component.ShimmerFrame
+import me.prokhorov.coinfolio.component.TextPlaceholder
 import me.prokhorov.coinfolio.domain.model.Coin
 import me.prokhorov.coinfolio.domain.model.Holding
 import me.prokhorov.coinfolio.domain.model.Portfolio
@@ -121,7 +131,7 @@ private fun PortfolioContent(
     onRefresh: () -> Unit,
     onCoinClick: (String) -> Unit,
 ) {
-    val rows = state.portfolio.valuedHoldings
+    val hasBottomFade = !bottomInset.hasBottomBar
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -132,44 +142,106 @@ private fun PortfolioContent(
             .add(WindowInsets(bottom = bottomInset.padding)),
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
-        when {
-            state.isLoading && rows.isEmpty() -> LoadingState(contentPadding = innerPadding)
+        AnimatedContent(
+            targetState = state,
+            transitionSpec = { fadeIn() togetherWith fadeOut() },
+            contentKey = { it.isLoading && it.portfolio.valuedHoldings.isEmpty() },
+            label = "portfolio loading",
+        ) { shownState ->
+            val rows = shownState.portfolio.valuedHoldings
 
-            rows.isEmpty() && state.error != null -> {
-                ErrorState(
-                    message = state.error.asMessage(),
-                    onRetry = onRetry,
-                    contentPadding = innerPadding,
-                )
-            }
+            when {
+                shownState.isLoading && rows.isEmpty() -> {
+                    LoadingState(
+                        contentPadding = innerPadding,
+                        isWideWindow = isWideWindow,
+                        hasBottomFade = hasBottomFade,
+                    )
+                }
 
-            rows.isEmpty() -> EmptyState(contentPadding = innerPadding)
+                rows.isEmpty() && shownState.error != null -> {
+                    ErrorState(
+                        message = shownState.error.asMessage(),
+                        onRetry = onRetry,
+                        contentPadding = innerPadding,
+                    )
+                }
 
-            else -> {
-                PortfolioPanes(
-                    portfolio = state.portfolio,
-                    contentPadding = innerPadding,
-                    isWideWindow = isWideWindow,
-                    isRefreshing = state.isRefreshing,
-                    // The bottom bar already covers the list, so it needs no fade there.
-                    hasBottomFade = !bottomInset.hasBottomBar,
-                    onRefresh = onRefresh,
-                    onCoinClick = onCoinClick,
-                )
+                rows.isEmpty() -> EmptyState(contentPadding = innerPadding)
+
+                else -> {
+                    PortfolioPanes(
+                        portfolio = shownState.portfolio,
+                        contentPadding = innerPadding,
+                        isWideWindow = isWideWindow,
+                        isRefreshing = shownState.isRefreshing,
+                        hasBottomFade = hasBottomFade,
+                        onRefresh = onRefresh,
+                        onCoinClick = onCoinClick,
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun LoadingState(contentPadding: PaddingValues) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(contentPadding),
-        contentAlignment = Alignment.Center,
-    ) {
-        CircularProgressIndicator()
+private fun LoadingState(
+    contentPadding: PaddingValues,
+    isWideWindow: Boolean,
+    hasBottomFade: Boolean,
+) {
+    val layoutDirection = LocalLayoutDirection.current
+    val loadingText = stringResource(R.string.loading_text)
+
+    EdgeFadeBox(
+        contentPadding = contentPadding,
+        modifier = Modifier.clearAndSetSemantics { contentDescription = loadingText },
+        hasTopFade = true,
+        hasBottomFade = hasBottomFade,
+    ) { fadePadding ->
+        if (isWideWindow) {
+            Row(modifier = Modifier.fillMaxSize()) {
+                TotalValueHeaderPlaceholder(
+                    modifier = Modifier
+                        .padding(
+                            start = contentPadding.calculateStartPadding(layoutDirection),
+                            top = contentPadding.calculateTopPadding(),
+                        )
+                        .width(PortfolioTotalPaneWidth),
+                )
+                ShimmerFrame(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(
+                            end = fadePadding.calculateEndPadding(layoutDirection),
+                            top = fadePadding.calculateTopPadding(),
+                        ),
+                ) {
+                    RepeatToFillColumn {
+                        ValuedHoldingRowPlaceholder()
+                    }
+                }
+            }
+        } else {
+            // No bottom padding: the rows go under the bottom fade, like a scrolled list.
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(
+                        start = fadePadding.calculateStartPadding(layoutDirection),
+                        end = fadePadding.calculateEndPadding(layoutDirection),
+                        top = fadePadding.calculateTopPadding(),
+                    ),
+            ) {
+                TotalValueHeaderPlaceholder(modifier = Modifier.fillMaxWidth())
+                ShimmerFrame(modifier = Modifier.weight(1f)) {
+                    RepeatToFillColumn {
+                        ValuedHoldingRowPlaceholder()
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -422,6 +494,74 @@ private fun ValuedHoldingRow(valuedHolding: ValuedHolding, onClick: () -> Unit) 
                 style = MaterialTheme.typography.bodySmall,
             )
         }
+    }
+}
+
+@Composable
+private fun TotalValueHeaderPlaceholder(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.padding(horizontal = Spacing16, vertical = Spacing24),
+    ) {
+        Text(
+            text = stringResource(R.string.portfolio_screen_total_label_text),
+            style = MaterialTheme.typography.labelMedium,
+        )
+        ShimmerFrame {
+            TextPlaceholder(style = MaterialTheme.typography.headlineMedium, width = 160.dp)
+        }
+    }
+}
+
+@Composable
+private fun ValuedHoldingRowPlaceholder() {
+    Row(
+        modifier = Modifier
+            .widthIn(max = ListMaxWidth)
+            .fillMaxWidth()
+            .padding(horizontal = Spacing16, vertical = Spacing12),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        ShapePlaceholder(modifier = Modifier.size(CoinIconSize), shape = CircleShape)
+        Column(
+            modifier = Modifier
+                .padding(horizontal = Spacing12)
+                .weight(1f),
+        ) {
+            TextPlaceholder(style = MaterialTheme.typography.bodyLarge, width = 96.dp)
+            TextPlaceholder(style = MaterialTheme.typography.bodySmall, width = 56.dp)
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            TextPlaceholder(style = MaterialTheme.typography.bodyLarge, width = 72.dp)
+            TextPlaceholder(style = MaterialTheme.typography.bodySmall, width = 64.dp)
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PortfolioContentLoadingPreview() {
+    PortfolioContentLoadingPreviewBody(isWideWindow = false)
+}
+
+@Preview(name = "Wide", showBackground = true, widthDp = 891, heightDp = 411)
+@Composable
+private fun PortfolioContentLoadingWidePreview() {
+    PortfolioContentLoadingPreviewBody(isWideWindow = true)
+}
+
+@Composable
+private fun PortfolioContentLoadingPreviewBody(isWideWindow: Boolean) {
+    CoinFolioTheme {
+        PortfolioContent(
+            state = PortfolioUiState(isLoading = true),
+            snackbarHostState = remember { SnackbarHostState() },
+            // A wide window has the rail, so no bottom bar.
+            bottomInset = BottomInset(padding = 0.dp, hasBottomBar = !isWideWindow),
+            isWideWindow = isWideWindow,
+            onRetry = {},
+            onRefresh = {},
+            onCoinClick = {},
+        )
     }
 }
 

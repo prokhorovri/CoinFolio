@@ -23,9 +23,12 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
 import java.math.BigDecimal
 import kotlinx.coroutines.flow.drop
 import me.prokhorov.coinfolio.R
+import me.prokhorov.coinfolio.component.ShimmerFrame
+import me.prokhorov.coinfolio.component.TextPlaceholder
 import me.prokhorov.coinfolio.domain.result.AppError
 import me.prokhorov.coinfolio.theme.Spacing8
 import me.prokhorov.coinfolio.util.QuantityInput
@@ -138,6 +141,19 @@ private fun QuantityError.asMessage(): String {
                 R.string.coin_detail_screen_quantity_decimals_text,
                 QuantityInput.MAX_FRACTION_DIGITS,
             )
+        }
+    }
+}
+
+@Composable
+internal fun HoldingSectionPlaceholder() {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing8)) {
+        Text(
+            text = stringResource(R.string.coin_detail_screen_holding_title_text),
+            style = MaterialTheme.typography.titleMedium,
+        )
+        ShimmerFrame {
+            TextPlaceholder(style = MaterialTheme.typography.bodyMedium, width = 96.dp)
         }
     }
 }
