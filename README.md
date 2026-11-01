@@ -16,18 +16,19 @@ Data comes from the free [CoinGecko API](https://www.coingecko.com/en/api).
 | Coin list | Portfolio |
 |---|---|
 | ![Coin list in landscape](docs/screenshots/coin_list_landscape.png) | ![Portfolio in landscape](docs/screenshots/portfolio_landscape.png) |
+| **Coin detail** | |
+| ![Coin detail in landscape](docs/screenshots/coin_detail_landscape.png) | |
 
-| Coin detail |
-|---|
-| ![Coin detail in landscape](docs/screenshots/coin_detail_landscape.png) |
+### Loading
+
+<img src="docs/screenshots/loading.gif" alt="Shimmer placeholders while the coin list loads" width="240">
 
 ## Features
 
-- Top 50 coins by market cap, with search and pull to refresh
+- Top 50 coins by market cap
 - Coin detail with market data
 - Portfolio: save how much of each coin you own and see the total value
 - Light and dark theme
-- Landscape and wide windows, with no lost state on rotation
 
 ## Tech stack
 
@@ -58,41 +59,16 @@ flowchart LR
     data --> domain
 ```
 
-ViewModels use only `:domain` types and get use cases, never repositories.
-DTOs and Room entities never leave `:data`.
-
-## Why these choices
-
-1. **Three modules:** The build checks the architecture rules, and `:domain` could be moved to
-   KMP later.
-2. **BigDecimal:** `Double` can't store `0.1` exactly, so prices and quantities never go through
-   `Double`.
-3. **Local search:** `/search` doesn't return prices, and the rate limit makes a request on every
-   keystroke a bad idea. So the app filters the 50 coins it already loaded.
-4. **MVI:** One state per screen, all actions in one sealed type, and effects are kept separate.
-   Easy to test.
-5. **Hilt:** It's the official option and checks DI at compile time. All Hilt modules are in
-   `:app`, so switching DI would touch one module.
-6. **kotlinx.serialization:** It works well with Kotlin null safety and default values, and
-   doesn't use reflection.
-
 ## Details worth a look
 
-- **Typed errors.** Every repository returns `Resource.Success` or
-  `Resource.Failure(AppError)`, so no exception reaches a ViewModel.
 - **Rate limits.** HTTP 429 has its own message and is never retried. A second refresh is
   ignored while one is running. The portfolio loads all its prices with one request and keeps
   them for 30 seconds.
-- **Every screen has loading, error and empty states.** An error during a refresh goes to a
-  snackbar, so the rows stay on screen.
 - **Layout follows the window width, not the orientation.** At 600dp and wider (the M3
   "medium" width class), a navigation rail replaces the bottom bar. The portfolio and the coin
-  detail split into two panes, and the coin list gets a max width. A phone in split screen
-  stays narrow, so it keeps the bottom bar.
+  detail split into two panes.
 - **No `NavigationSuiteScaffold`.** It places the content above the bar. The bottom bar here
   blurs the content under it (Haze), so the content must go under the bar.
-- **Rotation keeps the state.** The scroll position, the search text and the typed quantity
-  stay, and rotation sends no new request.
 
 ## Tests and checks
 
@@ -112,20 +88,7 @@ GitHub Actions runs three jobs on every pull request targeting `main` or `dev`:
 Static checks, Unit tests and UI tests. The UI tests run on the same Gradle managed
 device as locally.
 
-`main` and `dev` are protected. A direct push is rejected, and a pull request can be
-merged only when all three jobs pass.
-
-A tag like `v1.0.0` on `main` starts a release. The workflow runs the same three jobs.
-Then it builds a signed APK and AAB with R8 and checks that both files are signed,
-failing if either is not. It publishes both files on GitHub Releases, together with
-`mapping.txt` to help read crash stack traces. The keystore and its passwords are in
-GitHub Secrets.
-
-## Build
-
-Open the project in Android Studio and run `app`. Needs Android 9 (API 28) or newer.
-No API key is needed.
-A local release build is unsigned unless the `SIGNING_*` environment variables are set.
+A tag like `v1.0.0` on `main` starts a release.
 
 ## License
 
